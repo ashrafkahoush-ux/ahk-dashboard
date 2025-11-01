@@ -10,14 +10,14 @@ export default function Dashboard() {
   const roadmap = useRoadmap()
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-transition">
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-display font-bold text-ahk-navy-900">
+          <h1 className="text-3xl font-display font-bold" style={{ color: 'var(--text-primary)' }}>
             Strategic Dashboard
           </h1>
-          <p className="text-ahk-slate-600 mt-1">
+          <p className="mt-1" style={{ color: 'var(--text-secondary)' }}>
             Your command center for AHK Strategies growth
           </p>
         </div>

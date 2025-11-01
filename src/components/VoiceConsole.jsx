@@ -225,6 +225,22 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
       return say('Run Fusion Analysis first to generate multi-A-I consensus report.')
     }
 
+    // THEME TOGGLE
+    if (cmd.includes('dark mode') || cmd.includes('enable dark') || cmd.includes('turn on dark')) {
+      window.dispatchEvent(new CustomEvent('setDarkMode'))
+      return say('Activating dark mode. Welcome to the cosmic dashboard.')
+    }
+
+    if (cmd.includes('light mode') || cmd.includes('enable light') || cmd.includes('turn on light')) {
+      window.dispatchEvent(new CustomEvent('setLightMode'))
+      return say('Activating light mode. Switching to clean professional view.')
+    }
+
+    if (cmd.includes('toggle theme') || cmd.includes('switch theme') || cmd.includes('change theme')) {
+      window.dispatchEvent(new CustomEvent('toggleTheme'))
+      return say('Toggling theme mode.')
+    }
+
     // ANALYSIS
     if (cmd.includes('run analysis') || cmd.includes('ai analysis')) {
       await onRunAnalysis?.()
@@ -292,11 +308,11 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
 
     // HELP
     if (cmd.includes('help') || cmd.includes('what can you do')) {
-      return say('You can say: stop to silence me, run fusion analysis, show fusion report, run copilot, investor brief, show next actions, risk report, run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, or ask Gemini.')
+      return say('You can say: stop to silence me, dark mode, light mode, toggle theme, run fusion analysis, show fusion report, run copilot, investor brief, show next actions, risk report, run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, or ask Gemini.')
     }
 
     // FALLBACK
-    say('Command not recognized. Try: run fusion analysis, run copilot, investor brief, show next actions, or say stop to silence me. Say help for more options.')
+    say('Command not recognized. Try: dark mode, light mode, run fusion analysis, run copilot, investor brief, show next actions, or say stop to silence me. Say help for more options.')
   }
 
   function start() {
