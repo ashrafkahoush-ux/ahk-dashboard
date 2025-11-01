@@ -1,4 +1,5 @@
-import { Clock, CheckCircle, AlertCircle, Circle, User, DollarSign, Calendar } from 'lucide-react'
+import { Clock, CheckCircle, AlertCircle, Circle, User, DollarSign, Calendar, FileText } from 'lucide-react'
+import { getSourcesByIds } from '../utils/useData'
 
 export default function ProjectCard({ project }) {
   const statusConfig = {
@@ -26,19 +27,44 @@ export default function ProjectCard({ project }) {
 
   const status = statusConfig[project.status] || statusConfig['planning']
   const StatusIcon = status.icon
+  
+  // Get source documents for tooltip
+  const sourceDocs = getSourcesByIds(project.source_docs || [])
 
   return (
     <div className="card hover:shadow-xl transition-shadow cursor-pointer">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
-        <div>
+        <div className="flex-1">
           <h3 className="text-xl font-display font-bold text-ahk-navy-900 mb-1">
             {project.name}
           </h3>
-          <p className="text-sm text-ahk-slate-500">{project.description}</p>
+          {project.stage && (
+            <span className="inline-block px-2 py-1 text-xs font-semibold bg-ahk-gold-100 text-ahk-gold-800 rounded">
+              {project.stage}
+            </span>
+          )}
         </div>
         <StatusIcon className={`w-6 h-6 ${status.iconColor} flex-shrink-0`} />
       </div>
+
+      {/* Source Documents Badge */}
+      {sourceDocs.length > 0 && (
+        <div className="mb-4 group relative">
+          <div className="flex items-center text-xs text-ahk-slate-600">
+            <FileText className="w-3 h-3 mr-1" />
+            <span>{sourceDocs.length} source document{sourceDocs.length > 1 ? 's' : ''}</span>
+          </div>
+          <div className="absolute left-0 top-full mt-1 w-64 p-3 bg-ahk-navy-900 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+            <p className="font-semibold mb-2">Data Sources:</p>
+            <ul className="space-y-1">
+              {sourceDocs.map(doc => (
+                <li key={doc.id} className="truncate">• {doc.title}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="mb-4">

@@ -1,11 +1,12 @@
 import { Target, Rocket, TrendingUp, DollarSign, CheckCircle, Clock } from 'lucide-react'
 import MetricCard from '../components/MetricCard'
 import ProjectCard from '../components/ProjectCard'
-import projectsData from '../data/projects.json'
+import { useProjects } from '../utils/useData'
 import metricsData from '../data/metrics.json'
 
 export default function Dashboard() {
-  const { overview, projectHealth, timeline } = metricsData
+  const { overview, projectHealth, timeline} = metricsData
+  const projects = useProjects()
 
   return (
     <div className="space-y-6">
@@ -100,7 +101,7 @@ export default function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {projectsData.map((project) => (
+          {projects.map((project) => (
             <ProjectCard key={project.id} project={project} />
           ))}
         </div>

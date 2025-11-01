@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import Strategy from './pages/Strategy'
 import MarketingPulse from './pages/MarketingPulse'
 import AssetVault from './pages/AssetVault'
+import Partnerships from './pages/Partnerships'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/strategy" element={<Strategy />} />
           <Route path="/marketing" element={<MarketingPulse />} />
           <Route path="/assets" element={<AssetVault />} />
+          <Route path="/partnerships" element={<Partnerships />} />
         </Routes>
       </Layout>
     </Router>

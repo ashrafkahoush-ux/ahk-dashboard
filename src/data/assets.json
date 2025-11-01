@@ -1,0 +1,63 @@
+{
+  "categories": [
+    {
+      "id": "CAT-INVESTOR-PACKS",
+      "name": "Investor Packs",
+      "items": [
+        {
+          "id": "AST-DVM-INV",
+          "title": "Dual Vector Mobility – Investor Edition (HTML)",
+          "path": "uploads/merged-fs-InvestorEdition.html",
+          "source_doc": "SRC-STRAT-ROADMAP",
+          "tags": ["DVM", "IRR", "CapEx"]
+        },
+        {
+          "id": "AST-QVAN-FS",
+          "title": "Q-VAN Feasibility (FINAL v3, HTML)",
+          "path": "uploads/Q-VAN-FS-FINAL-v3.html",
+          "source_doc": "SRC-PROG-REPORT",
+          "tags": ["Q-VAN", "Feasibility"]
+        },
+        {
+          "id": "AST-WOW-FS",
+          "title": "WOW – Investor Edition (HTML)",
+          "path": "uploads/WOW-MENA-Feasibility-InvestorEdition.html",
+          "source_doc": "SRC-STRAT-ROADMAP",
+          "tags": ["WOW", "MENA"]
+        }
+      ]
+    },
+    {
+      "id": "CAT-DATA-ROOM",
+      "name": "Data Room",
+      "items": [
+        {
+          "id": "AST-MOM-ITALY",
+          "title": "MOM – AHK × Team Italy (2025-10-13)",
+          "path": "uploads/MOM_AHK_Team_Italy_2025-10-13.pdf",
+          "source_doc": "SRC-PROG-REPORT",
+          "confidential": true
+        },
+        {
+          "id": "AST-CHECK",
+          "title": "AHK Data Room Checklists (XLSX)",
+          "path": "uploads/AHK_Data_Room_Checklists.xlsx",
+          "source_doc": "SRC-ASSETS-STATUS",
+          "confidential": true
+        }
+      ]
+    },
+    {
+      "id": "CAT-TEMPLATES",
+      "name": "Templates",
+      "items": [
+        {
+          "id": "AST-PITCH",
+          "title": "Investor Pitch Template (HTML)",
+          "path": "uploads/Q-VAN-Presentation.html",
+          "source_doc": "SRC-PROG-REPORT"
+        }
+      ]
+    }
+  ]
+}

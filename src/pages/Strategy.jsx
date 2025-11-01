@@ -1,14 +1,62 @@
 import { useState } from 'react'
-import { Plus, Filter } from 'lucide-react'
+import { Plus, Filter, FileText } from 'lucide-react'
 import TaskList from '../components/TaskList'
-import roadmapData from '../data/roadmap.json'
+import { useRoadmap, useSources, useProjects, groupTasksBySource, groupTasksByProject, getSourceById } from '../utils/useData'
 
 export default function Strategy() {
-  const [tasks, setTasks] = useState(roadmapData)
+  const initialTasks = useRoadmap()
+  const sources = useSources()
+  const projects = useProjects()
+  const [filterMode, setFilterMode] = useState('all') // all, by-project, by-source
+  const [tasksState, setTasksState] = useState(initialTasks)
 
   const handleTaskUpdate = (updatedTask) => {
     console.log('Task updated:', updatedTask)
-    // Here you can add logic to save to backend/localStorage
+    setTasksState(prev => prev.map(t => t.id === updatedTask.id ? updatedTask : t))
+  }
+
+  const renderTasksBySource = () => {
+    const grouped = groupTasksBySource()
+    
+    return Object.entries(grouped).map(([sourceId, sourceTasks]) => {
+      const sourceDoc = getSourceById(sourceId)
+      
+      return (
+        <div key={sourceId} className="mb-8">
+          <div className="flex items-center space-x-3 mb-4 p-4 bg-ahk-navy-500 text-white rounded-lg">
+            <FileText className="w-5 h-5" />
+            <div>
+              <h3 className="font-semibold">{sourceDoc?.title || sourceId}</h3>
+              <p className="text-sm text-white text-opacity-80">{sourceTasks.length} tasks</p>
+            </div>
+          </div>
+          <TaskList tasks={sourceTasks} onTaskUpdate={handleTaskUpdate} showFilters={false} />
+        </div>
+      )
+    })
+  }
+
+  const renderTasksByProject = () => {
+    const grouped = groupTasksByProject()
+    
+    return Object.entries(grouped).map(([projectId, projectTasks]) => {
+      const project = projects.find(p => p.id === projectId)
+      
+      return (
+        <div key={projectId} className="mb-8">
+          <div className="flex items-center space-x-3 mb-4 p-4 bg-ahk-gold-500 text-white rounded-lg">
+            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold">
+              {project?.name?.charAt(0) || '?'}
+            </div>
+            <div>
+              <h3 className="font-semibold">{project?.name || projectId}</h3>
+              <p className="text-sm text-white text-opacity-80">{projectTasks.length} tasks • {project?.stage || 'Planning'}</p>
+            </div>
+          </div>
+          <TaskList tasks={projectTasks} onTaskUpdate={handleTaskUpdate} showFilters={false} />
+        </div>
+      )
+    })
   }
 
   return (
@@ -29,8 +77,52 @@ export default function Strategy() {
         </button>
       </div>
 
+      {/* Filter Mode Selector */}
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex items-center space-x-2 mb-3">
+          <Filter className="w-5 h-5 text-ahk-navy-500" />
+          <span className="font-semibold text-ahk-navy-900">View Mode:</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setFilterMode('all')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filterMode === 'all'
+                ? 'bg-ahk-navy-500 text-white'
+                : 'bg-ahk-slate-100 text-ahk-slate-700 hover:bg-ahk-slate-200'
+            }`}
+          >
+            All Tasks
+          </button>
+          <button
+            onClick={() => setFilterMode('by-project')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filterMode === 'by-project'
+                ? 'bg-ahk-gold-500 text-white'
+                : 'bg-ahk-slate-100 text-ahk-slate-700 hover:bg-ahk-slate-200'
+            }`}
+          >
+            By Project
+          </button>
+          <button
+            onClick={() => setFilterMode('by-source')}
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              filterMode === 'by-source'
+                ? 'bg-ahk-navy-500 text-white'
+                : 'bg-ahk-slate-100 text-ahk-slate-700 hover:bg-ahk-slate-200'
+            }`}
+          >
+            By Source Document
+          </button>
+        </div>
+      </div>
+
       {/* Task List Component */}
-      <TaskList tasks={tasks} onTaskUpdate={handleTaskUpdate} />
+      {filterMode === 'all' && (
+        <TaskList tasks={tasksState} onTaskUpdate={handleTaskUpdate} />
+      )}
+      {filterMode === 'by-project' && renderTasksByProject()}
+      {filterMode === 'by-source' && renderTasksBySource()}
     </div>
   )
 }

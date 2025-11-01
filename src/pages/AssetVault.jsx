@@ -1,52 +1,29 @@
-import { FolderOpen, FileText, Lock, Download, ExternalLink, Shield } from 'lucide-react'
+import { useState } from 'react'
+import { FolderOpen, FileText, Lock, Download, ExternalLink, Shield, Copy, CheckCircle } from 'lucide-react'
+import { useAssets, getSourceById } from '../utils/useData'
 
 export default function AssetVault() {
-  const assetCategories = [
-    {
-      id: 1,
-      name: 'Investor Packs',
-      description: 'Pitch decks, financial projections, and investor presentations',
-      files: 8,
-      lastUpdated: '2 days ago',
-      icon: FileText,
-      color: 'from-ahk-navy-600 to-ahk-navy-800'
-    },
-    {
-      id: 2,
-      name: 'Case Studies',
-      description: 'Success stories, client testimonials, and market validation',
-      files: 5,
-      lastUpdated: '1 week ago',
-      icon: FolderOpen,
-      color: 'from-ahk-gold-500 to-ahk-gold-700'
-    },
-    {
-      id: 3,
-      name: 'Templates',
-      description: 'Marketing materials, contracts, and operational templates',
-      files: 12,
-      lastUpdated: '3 days ago',
-      icon: FileText,
-      color: 'from-ahk-slate-600 to-ahk-slate-800'
-    },
-    {
-      id: 4,
-      name: 'Data Room',
-      description: 'Confidential business documents for due diligence',
-      files: 15,
-      lastUpdated: '5 days ago',
-      icon: Lock,
-      color: 'from-red-600 to-red-800'
-    }
-  ]
+  const categories = useAssets()
+  const [copiedId, setCopiedId] = useState(null)
+  const [expandedCategories, setExpandedCategories] = useState({})
 
-  const recentFiles = [
-    { name: 'AHK_Strategic_Overview_Q4_2025.pdf', category: 'Investor Packs', size: '2.4 MB', date: '2025-10-30' },
-    { name: 'Project_QVAN_Pitch_Deck.pptx', category: 'Investor Packs', size: '8.7 MB', date: '2025-10-29' },
-    { name: 'DVM_Case_Study_Dealer_Network.pdf', category: 'Case Studies', size: '1.8 MB', date: '2025-10-28' },
-    { name: 'Marketing_Campaign_Template.docx', category: 'Templates', size: '450 KB', date: '2025-10-27' },
-    { name: 'Financial_Projections_2026.xlsx', category: 'Data Room', size: '1.2 MB', date: '2025-10-26' }
-  ]
+  const toggleCategory = (categoryId) => {
+    setExpandedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }))
+  }
+
+  const copyLink = (assetPath) => {
+    const fullUrl = `${window.location.origin}/${assetPath}`
+    navigator.clipboard.writeText(fullUrl)
+    setCopiedId(assetPath)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const openAsset = (assetPath) => {
+    window.open(`/${assetPath}`, '_blank')
+  }
 
   return (
     <div className="space-y-6">
@@ -80,68 +57,112 @@ export default function AssetVault() {
         </div>
       </div>
 
-      {/* Asset Categories Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {assetCategories.map((category) => {
-          const Icon = category.icon
+      {/* Asset Categories - Expandable */}
+      <div className="space-y-4">
+        {categories.map((category) => {
+          const isExpanded = expandedCategories[category.id]
+          const categoryIcon = category.id === 'CAT-DATA-ROOM' ? Lock : 
+                               category.id === 'CAT-TEMPLATES' ? FileText : FolderOpen
+          const Icon = categoryIcon
+          
           return (
-            <button
-              key={category.id}
-              className="card hover:shadow-xl transition-all text-left group"
-            >
-              <div className={`bg-gradient-to-br ${category.color} rounded-lg p-4 mb-4 group-hover:scale-105 transition-transform`}>
-                <Icon className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-lg font-display font-bold text-ahk-navy-900 mb-2">
-                {category.name}
-              </h3>
-              <p className="text-sm text-ahk-slate-600 mb-4">
-                {category.description}
-              </p>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-ahk-slate-600">{category.files} files</span>
-                <span className="text-ahk-slate-500">{category.lastUpdated}</span>
-              </div>
-            </button>
+            <div key={category.id} className="card">
+              <button
+                onClick={() => toggleCategory(category.id)}
+                className="w-full flex items-center justify-between p-4 hover:bg-ahk-slate-50 rounded-lg transition-colors"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className={`rounded-lg p-3 ${
+                    category.id === 'CAT-DATA-ROOM' ? 'bg-red-100' :
+                    category.id === 'CAT-INVESTOR-PACKS' ? 'bg-ahk-navy-100' :
+                    'bg-ahk-gold-100'
+                  }`}>
+                    <Icon className={`w-6 h-6 ${
+                      category.id === 'CAT-DATA-ROOM' ? 'text-red-600' :
+                      category.id === 'CAT-INVESTOR-PACKS' ? 'text-ahk-navy-600' :
+                      'text-ahk-gold-600'
+                    }`} />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="text-lg font-display font-bold text-ahk-navy-900">
+                      {category.name}
+                    </h3>
+                    <p className="text-sm text-ahk-slate-600">
+                      {category.items.length} file{category.items.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-ahk-slate-400">
+                  {isExpanded ? '▼' : '▶'}
+                </div>
+              </button>
+
+              {isExpanded && (
+                <div className="px-4 pb-4 space-y-2">
+                  {category.items.map((item) => {
+                    const sourceDoc = getSourceById(item.source_doc)
+                    
+                    return (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-4 bg-ahk-slate-50 rounded-lg hover:bg-ahk-slate-100 transition-colors"
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <p className="font-semibold text-ahk-navy-900">{item.title}</p>
+                            {item.confidential && (
+                              <span className="px-2 py-0.5 bg-red-100 text-red-800 text-xs font-semibold rounded">
+                                CONFIDENTIAL
+                              </span>
+                            )}
+                          </div>
+                          {item.tags && (
+                            <div className="flex flex-wrap gap-1 mb-2">
+                              {item.tags.map(tag => (
+                                <span key={tag} className="px-2 py-0.5 bg-ahk-slate-200 text-ahk-slate-700 text-xs rounded">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          {sourceDoc && (
+                            <p className="text-xs text-ahk-slate-600">
+                              Source: {sourceDoc.title}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center space-x-2 ml-4">
+                          <button
+                            onClick={() => openAsset(item.path)}
+                            className="p-2 bg-ahk-navy-500 text-white rounded-lg hover:bg-ahk-navy-600 transition-colors"
+                            title="Open"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => copyLink(item.path)}
+                            className={`p-2 rounded-lg transition-colors ${
+                              copiedId === item.path
+                                ? 'bg-green-500 text-white'
+                                : 'bg-ahk-gold-500 text-white hover:bg-ahk-gold-600'
+                            }`}
+                            title="Copy Link"
+                          >
+                            {copiedId === item.path ? (
+                              <CheckCircle className="w-4 h-4" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           )
         })}
-      </div>
-
-      {/* Recent Files */}
-      <div className="card">
-        <h3 className="text-xl font-display font-bold text-ahk-navy-900 mb-4">
-          Recent Files
-        </h3>
-        <div className="space-y-2">
-          {recentFiles.map((file, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 hover:bg-ahk-slate-50 rounded-lg transition-colors cursor-pointer group"
-            >
-              <div className="flex items-center space-x-4">
-                <div className="bg-ahk-slate-100 rounded-lg p-3 group-hover:bg-ahk-navy-100 transition-colors">
-                  <FileText className="w-5 h-5 text-ahk-navy-700" />
-                </div>
-                <div>
-                  <p className="font-semibold text-ahk-navy-900 group-hover:text-ahk-navy-700">
-                    {file.name}
-                  </p>
-                  <p className="text-sm text-ahk-slate-600">
-                    {file.category} • {file.size}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-ahk-slate-600">
-                  {new Date(file.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                </span>
-                <button className="p-2 hover:bg-ahk-slate-200 rounded-lg transition-colors">
-                  <Download className="w-5 h-5 text-ahk-slate-600" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* Quick Links */}

@@ -1,0 +1,21 @@
+{
+  "version": "2025-11-01",
+  "groups": [
+    {
+      "sector": "Automotive Assembler",
+      "country": "Egypt",
+      "items": [
+        { "name": "Ghabbour Auto", "website": "https://www.gbauto.com/", "source": "SRC-GROK-CLIENTS" },
+        { "name": "Al-Mansour Automotive", "website": "https://almansour.com.eg/", "source": "SRC-GROK-CLIENTS" }
+      ]
+    },
+    {
+      "sector": "Logistics",
+      "country": "Egypt",
+      "items": [
+        { "name": "Aramex Egypt", "website": "https://www.aramex.com/eg", "source": "SRC-GROK-CLIENTS" },
+        { "name": "DHL Egypt", "website": "https://www.dhl.com/eg-en", "source": "SRC-GROK-CLIENTS" }
+      ]
+    }
+  ]
+}

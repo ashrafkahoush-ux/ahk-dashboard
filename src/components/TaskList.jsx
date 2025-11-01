@@ -1,9 +1,14 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckSquare, Square, Calendar, Tag } from 'lucide-react'
 
-export default function TaskList({ tasks: initialTasks, onTaskUpdate }) {
+export default function TaskList({ tasks: initialTasks = [], onTaskUpdate, showFilters = true }) {
   const [tasks, setTasks] = useState(initialTasks)
   const [filter, setFilter] = useState('all')
+
+  // Update tasks when initialTasks prop changes
+  useEffect(() => {
+    setTasks(initialTasks)
+  }, [initialTasks])
 
   const toggleTask = (taskId) => {
     const updatedTasks = tasks.map(task => {
@@ -75,21 +80,23 @@ export default function TaskList({ tasks: initialTasks, onTaskUpdate }) {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        {['all', 'pending', 'in-progress', 'completed'].map(status => (
-          <button
-            key={status}
-            onClick={() => setFilter(status)}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filter === status
-                ? 'bg-ahk-navy-500 text-white'
-                : 'bg-ahk-slate-100 text-ahk-slate-700 hover:bg-ahk-slate-200'
-            }`}
-          >
-            {status === 'all' ? 'All Tasks' : status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-          </button>
-        ))}
-      </div>
+      {showFilters && (
+        <div className="flex flex-wrap gap-2">
+          {['all', 'pending', 'in-progress', 'completed'].map(status => (
+            <button
+              key={status}
+              onClick={() => setFilter(status)}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                filter === status
+                  ? 'bg-ahk-navy-500 text-white'
+                  : 'bg-ahk-slate-100 text-ahk-slate-700 hover:bg-ahk-slate-200'
+              }`}
+            >
+              {status === 'all' ? 'All Tasks' : status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Task List */}
       <div className="space-y-3">

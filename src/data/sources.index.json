@@ -1,0 +1,41 @@
+{
+  "version": "2025-11-01",
+  "documents": [
+    {
+      "id": "SRC-STRAT-ROADMAP",
+      "title": "A_Strategic_Roadmap_v2.0.docx",
+      "path": "uploads/A_Strategic_Roadmap_v2.0.docx",
+      "status": "active"
+    },
+    {
+      "id": "SRC-ASSETS-STATUS",
+      "title": "assets-status-report-26Oct25.xlsx",
+      "path": "uploads/assets-status-report-26Oct25.xlsx",
+      "status": "active"
+    },
+    {
+      "id": "SRC-BIZ-IDEAS",
+      "title": "Business Ideas.docx",
+      "path": "uploads/Business Ideas.docx",
+      "status": "active"
+    },
+    {
+      "id": "SRC-RECO",
+      "title": "recommendations.docx",
+      "path": "uploads/recommendations.docx",
+      "status": "active"
+    },
+    {
+      "id": "SRC-PROG-REPORT",
+      "title": "progress report AHKStrategies.docx",
+      "path": "uploads/progress report AHKStrategies.docx",
+      "status": "active"
+    },
+    {
+      "id": "SRC-GROK-CLIENTS",
+      "title": "Grok Client Intelligence Sheet",
+      "path": "integrations/grok_clients.csv",
+      "status": "active"
+    }
+  ]
+}
