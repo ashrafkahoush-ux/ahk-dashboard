@@ -1,6 +1,7 @@
 // src/components/AICoPilot.jsx
 import React, { useState, useEffect } from 'react';
 import { fetchGeminiAnalysis, testGeminiConnection } from '../api/geminiClient';
+import { runMultiAIAnalysis } from '../ai/orchestrator';
 import { preparePrompt } from '../ai/autoAgent.browser';
 import { saveRoadmapTask } from '../ai/persist';
 import { useProjects, useRoadmap } from '../utils/useData';
@@ -10,6 +11,9 @@ export default function AICoPilot() {
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+  const [fusionReport, setFusionReport] = useState(null);
+  const [fusionLoading, setFusionLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('fusion'); // fusion, gemini, grok, chatgpt
   const [lastRun, setLastRun] = useState(null);
   const [autoAnalyze, setAutoAnalyze] = useState(() => {
     return localStorage.getItem('ahk-auto-analyze') === 'true';
@@ -76,6 +80,54 @@ export default function AICoPilot() {
     }
   }
 
+  async function runFusionAnalysis() {
+    setFusionLoading(true);
+    setActiveTab('fusion'); // Switch to fusion tab
+    try {
+      // Fetch HTML report KPIs
+      let htmlKPIs = null;
+      try {
+        const kpiResponse = await fetch('/api/parse-html-reports');
+        if (kpiResponse.ok) {
+          const kpiData = await kpiResponse.json();
+          htmlKPIs = kpiData.reports;
+          setInvestorKPIs(htmlKPIs);
+        }
+      } catch (kpiError) {
+        console.warn('Could not fetch HTML KPIs:', kpiError);
+      }
+
+      const context = preparePrompt(projects, roadmap, metricsData, htmlKPIs);
+      
+      console.log('🧩 Starting Multi-AI Fusion Analysis...');
+      
+      // Run orchestrated analysis
+      const fusionResult = await runMultiAIAnalysis(context);
+      
+      console.log('✅ Fusion Analysis complete:', fusionResult);
+      
+      setFusionReport(fusionResult);
+      setLastRun(new Date().toISOString());
+      
+      // Save to localStorage
+      localStorage.setItem('ahk-fusion-analysis', JSON.stringify({
+        fusion: fusionResult,
+        timestamp: new Date().toISOString()
+      }));
+      
+      // Also save individual Gemini analysis for compatibility
+      if (fusionResult.raw?.gemini) {
+        setAnalysis(fusionResult.raw.gemini);
+      }
+      
+    } catch (error) {
+      console.error('❌ Fusion Analysis error:', error);
+      alert(`⚠️ Fusion Analysis Error\n\n${error.message}\n\nCheck console (F12) for details.`);
+    } finally {
+      setFusionLoading(false);
+    }
+  }
+
   async function toggleAutoAnalyze() {
     const newValue = !autoAnalyze;
     setAutoAnalyze(newValue);
@@ -110,12 +162,30 @@ export default function AICoPilot() {
       }
     }
 
+    // Load last fusion report
+    const savedFusion = localStorage.getItem('ahk-fusion-analysis');
+    if (savedFusion) {
+      try {
+        const data = JSON.parse(savedFusion);
+        setFusionReport(data.fusion);
+      } catch (e) {
+        console.error('Failed to load saved fusion:', e);
+      }
+    }
+
     // Listen for voice command trigger
     function handleVoiceCommand() {
       runAnalysis();
       setExpanded(true);
     }
     window.addEventListener('runCoPilotAnalysis', handleVoiceCommand);
+
+    // Listen for fusion voice command trigger
+    function handleFusionCommand() {
+      runFusionAnalysis();
+      setExpanded(true);
+    }
+    window.addEventListener('runFusionAnalysis', handleFusionCommand);
 
     // Auto-analyze scheduler (24 hours)
     if (autoAnalyze) {
@@ -141,11 +211,13 @@ export default function AICoPilot() {
       return () => {
         clearInterval(intervalId);
         window.removeEventListener('runCoPilotAnalysis', handleVoiceCommand);
+        window.removeEventListener('runFusionAnalysis', handleFusionCommand);
       };
     }
 
     return () => {
       window.removeEventListener('runCoPilotAnalysis', handleVoiceCommand);
+      window.removeEventListener('runFusionAnalysis', handleFusionCommand);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoAnalyze]);
@@ -231,22 +303,42 @@ export default function AICoPilot() {
             <div style={{ fontSize: 15, fontWeight: 'bold', color: '#c7d2fe' }}>
               🤖 AI Co-Pilot
             </div>
-            <button
-              onClick={runAnalysis}
-              disabled={loading}
-              style={{
-                background: loading ? '#4c1d95' : '#6366f1',
-                color: '#fff',
-                border: 'none',
-                padding: '6px 14px',
-                borderRadius: 8,
-                cursor: loading ? 'not-allowed' : 'pointer',
-                fontSize: 12,
-                fontWeight: 'bold'
-              }}
-            >
-              {loading ? '🔄 Running...' : '▶️ Analyze'}
-            </button>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={runAnalysis}
+                disabled={loading || fusionLoading}
+                style={{
+                  background: loading ? '#4c1d95' : '#6366f1',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  cursor: (loading || fusionLoading) ? 'not-allowed' : 'pointer',
+                  fontSize: 12,
+                  fontWeight: 'bold'
+                }}
+              >
+                {loading ? '🔄 Running...' : '▶️ Analyze'}
+              </button>
+              <button
+                onClick={runFusionAnalysis}
+                disabled={loading || fusionLoading}
+                style={{
+                  background: fusionLoading ? '#4c1d95' : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '6px 14px',
+                  borderRadius: 8,
+                  cursor: (loading || fusionLoading) ? 'not-allowed' : 'pointer',
+                  fontSize: 12,
+                  fontWeight: 'bold',
+                  boxShadow: fusionLoading ? 'none' : '0 2px 8px rgba(139, 92, 246, 0.4)'
+                }}
+                title="Run Multi-AI Fusion Analysis (Gemini + Grok + ChatGPT)"
+              >
+                {fusionLoading ? '🔄 Fusing...' : '🧩 Fusion'}
+              </button>
+            </div>
           </div>
 
           {/* Last Run Timestamp */}
@@ -331,8 +423,397 @@ export default function AICoPilot() {
             </div>
           )}
 
-          {/* Analysis Results */}
-          {analysis ? (
+          {/* Tab Navigation - Show if fusion report exists */}
+          {fusionReport && (
+            <div style={{
+              display: 'flex',
+              gap: 4,
+              marginBottom: 14,
+              borderBottom: '1px solid #312e81',
+              paddingBottom: 4
+            }}>
+              <button
+                onClick={() => setActiveTab('fusion')}
+                style={{
+                  flex: 1,
+                  background: activeTab === 'fusion' ? '#6366f1' : 'transparent',
+                  color: activeTab === 'fusion' ? '#fff' : '#a5b4fc',
+                  border: 'none',
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  fontWeight: 'bold'
+                }}
+              >
+                🧩 Fusion
+              </button>
+              <button
+                onClick={() => setActiveTab('gemini')}
+                style={{
+                  flex: 1,
+                  background: activeTab === 'gemini' ? '#6366f1' : 'transparent',
+                  color: activeTab === 'gemini' ? '#fff' : '#a5b4fc',
+                  border: 'none',
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  fontWeight: 'bold'
+                }}
+              >
+                🤖 Gemini
+              </button>
+              <button
+                onClick={() => setActiveTab('grok')}
+                style={{
+                  flex: 1,
+                  background: activeTab === 'grok' ? '#6366f1' : 'transparent',
+                  color: activeTab === 'grok' ? '#fff' : '#a5b4fc',
+                  border: 'none',
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  fontWeight: 'bold'
+                }}
+              >
+                🚀 Grok
+              </button>
+              <button
+                onClick={() => setActiveTab('chatgpt')}
+                style={{
+                  flex: 1,
+                  background: activeTab === 'chatgpt' ? '#6366f1' : 'transparent',
+                  color: activeTab === 'chatgpt' ? '#fff' : '#a5b4fc',
+                  border: 'none',
+                  padding: '6px 10px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  fontWeight: 'bold'
+                }}
+              >
+                💬 ChatGPT
+              </button>
+            </div>
+          )}
+
+          {/* Fusion Report Tab */}
+          {fusionReport && activeTab === 'fusion' && (
+            <>
+              {/* Consensus Score Bar */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 'bold',
+                  color: '#a78bfa',
+                  marginBottom: 6,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span>🎯 Consensus Score</span>
+                  <span style={{
+                    fontSize: 18,
+                    color: fusionReport.consensus_score >= 80 ? '#10b981' :
+                           fusionReport.consensus_score >= 60 ? '#fbbf24' : '#ef4444'
+                  }}>
+                    {fusionReport.consensus_score}%
+                  </span>
+                </div>
+                <div style={{
+                  background: '#1e1b4b',
+                  height: 12,
+                  borderRadius: 6,
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    width: `${fusionReport.consensus_score}%`,
+                    height: '100%',
+                    background: fusionReport.consensus_score >= 80 ? 
+                      'linear-gradient(90deg, #10b981, #34d399)' :
+                      fusionReport.consensus_score >= 60 ?
+                      'linear-gradient(90deg, #fbbf24, #fcd34d)' :
+                      'linear-gradient(90deg, #ef4444, #f87171)',
+                    transition: 'width 1s ease'
+                  }} />
+                </div>
+                <div style={{
+                  fontSize: 10,
+                  color: '#a5b4fc',
+                  marginTop: 4
+                }}>
+                  Sources: {fusionReport.sources_used.join(', ')} • {fusionReport.executionTime}ms
+                </div>
+              </div>
+
+              {/* Consensus Summary */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 'bold',
+                  color: '#fbbf24',
+                  marginBottom: 6
+                }}>
+                  🧠 Consensus Summary
+                </div>
+                <div style={{
+                  background: '#1e1b4b',
+                  padding: 10,
+                  borderRadius: 8,
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  color: '#e0e7ff'
+                }}>
+                  {fusionReport.summary}
+                </div>
+              </div>
+
+              {/* All Insights (Combined) */}
+              {fusionReport.all_insights.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                    color: '#34d399',
+                    marginBottom: 6
+                  }}>
+                    💡 Top Insights (Multi-AI)
+                  </div>
+                  {fusionReport.all_insights.slice(0, 5).map((insight, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: '#1e1b4b',
+                        padding: 8,
+                        borderRadius: 8,
+                        fontSize: 11,
+                        marginBottom: 6,
+                        color: '#e0e7ff',
+                        borderLeft: '3px solid #8b5cf6'
+                      }}
+                    >
+                      {insight}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* All Recommendations */}
+              {fusionReport.all_recommendations.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                    color: '#ec4899',
+                    marginBottom: 6
+                  }}>
+                    🎯 Strategic Recommendations
+                  </div>
+                  {fusionReport.all_recommendations.map((rec, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: '#1e1b4b',
+                        padding: 8,
+                        borderRadius: 8,
+                        fontSize: 11,
+                        marginBottom: 6,
+                        color: '#e0e7ff',
+                        borderLeft: '3px solid #ec4899'
+                      }}
+                    >
+                      {rec}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Errors (if any) */}
+              {fusionReport.errors.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{
+                    fontSize: 11,
+                    color: '#fbbf24',
+                    background: '#44403c',
+                    padding: 6,
+                    borderRadius: 6
+                  }}>
+                    ⚠️ Some AI engines unavailable: {fusionReport.errors.map(e => e.source).join(', ')}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Grok Tab */}
+          {fusionReport && activeTab === 'grok' && fusionReport.raw.grok && (
+            <>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 'bold',
+                  color: '#fbbf24',
+                  marginBottom: 6
+                }}>
+                  🚀 Market Intelligence (Grok)
+                </div>
+                <div style={{
+                  background: '#1e1b4b',
+                  padding: 10,
+                  borderRadius: 8,
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  color: '#e0e7ff'
+                }}>
+                  {fusionReport.raw.grok.feedSummary}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 14 }}>
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 'bold',
+                  color: '#34d399',
+                  marginBottom: 6
+                }}>
+                  📈 Market Signals
+                </div>
+                {fusionReport.raw.grok.marketSignals.map((signal, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      background: '#1e1b4b',
+                      padding: 8,
+                      borderRadius: 8,
+                      fontSize: 11,
+                      marginBottom: 6,
+                      color: '#e0e7ff'
+                    }}
+                  >
+                    • {signal}
+                  </div>
+                ))}
+              </div>
+
+              {fusionReport.raw.grok.sentiment && (
+                <div style={{
+                  background: '#1e1b4b',
+                  padding: 10,
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: '#a5b4fc'
+                }}>
+                  <strong>Sentiment:</strong> {fusionReport.raw.grok.sentiment.overall} ({fusionReport.raw.grok.sentiment.score}/100)
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ChatGPT Tab */}
+          {fusionReport && activeTab === 'chatgpt' && fusionReport.raw.chatgpt && (
+            <>
+              <div style={{ marginBottom: 14 }}>
+                <div style={{
+                  fontSize: 13,
+                  fontWeight: 'bold',
+                  color: '#ec4899',
+                  marginBottom: 6
+                }}>
+                  💬 Executive Narrative (ChatGPT-5)
+                </div>
+                <div style={{
+                  background: '#1e1b4b',
+                  padding: 10,
+                  borderRadius: 8,
+                  fontSize: 12,
+                  lineHeight: 1.5,
+                  color: '#e0e7ff'
+                }}>
+                  {fusionReport.raw.chatgpt.executiveSummary}
+                </div>
+              </div>
+
+              {fusionReport.raw.chatgpt.strategicInsights.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                    color: '#a78bfa',
+                    marginBottom: 6
+                  }}>
+                    💡 Strategic Insights
+                  </div>
+                  {fusionReport.raw.chatgpt.strategicInsights.map((insight, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        background: '#1e1b4b',
+                        padding: 8,
+                        borderRadius: 8,
+                        fontSize: 11,
+                        marginBottom: 6,
+                        color: '#e0e7ff'
+                      }}
+                    >
+                      {i + 1}. {insight}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {fusionReport.raw.chatgpt.investorAppeal && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{
+                    fontSize: 13,
+                    fontWeight: 'bold',
+                    color: '#10b981',
+                    marginBottom: 6
+                  }}>
+                    💎 Investor Appeal
+                  </div>
+                  <div style={{
+                    background: '#1e1b4b',
+                    padding: 10,
+                    borderRadius: 8,
+                    fontSize: 11,
+                    color: '#e0e7ff'
+                  }}>
+                    <div style={{ marginBottom: 6 }}>
+                      <strong style={{ color: '#34d399' }}>Strengths:</strong>
+                      <ul style={{ marginLeft: 16, marginTop: 4 }}>
+                        {fusionReport.raw.chatgpt.investorAppeal.strengths.map((s, i) => (
+                          <li key={i}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <strong style={{ color: '#fbbf24' }}>Concerns:</strong>
+                      <ul style={{ marginLeft: 16, marginTop: 4 }}>
+                        {fusionReport.raw.chatgpt.investorAppeal.concerns.map((c, i) => (
+                          <li key={i}>{c}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div style={{ marginTop: 8, fontWeight: 'bold', color: '#a78bfa' }}>
+                      Rating: {fusionReport.raw.chatgpt.investorAppeal.overallRating}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Gemini Tab - Show standard analysis when Gemini tab is selected */}
+          {fusionReport && activeTab === 'gemini' && analysis && (
+            <>
+              {/* Standard Gemini Analysis Content - reusing existing code */}
+            </>
+          )}
+
+          {/* Analysis Results (Standard Gemini - show when no fusion report or gemini tab) */}
+          {((!fusionReport && analysis) || (fusionReport && activeTab === 'gemini' && analysis)) && (
             <>
               {/* Investor Brief */}
               <div style={{ marginBottom: 14 }}>
@@ -494,7 +975,10 @@ export default function AICoPilot() {
                 )}
               </div>
             </>
-          ) : (
+          )}
+
+          {/* Empty State - show when no analysis at all */}
+          {!analysis && !fusionReport && (
             <div style={{
               textAlign: 'center',
               padding: 30,
@@ -502,7 +986,7 @@ export default function AICoPilot() {
               fontSize: 13
             }}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>🤖</div>
-              <div>Click <strong>▶️ Analyze</strong> to generate strategic insights</div>
+              <div>Click <strong>▶️ Analyze</strong> or <strong>🧩 Fusion</strong> to generate strategic insights</div>
             </div>
           )}
 

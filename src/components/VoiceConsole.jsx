@@ -202,6 +202,29 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
       return say('Run Co-Pilot analysis to generate risk map.')
     }
 
+    // FUSION ANALYSIS
+    if (cmd.includes('run fusion') || cmd.includes('fusion analysis') || cmd.includes('multi ai')) {
+      // Trigger Fusion Analysis by dispatching custom event
+      window.dispatchEvent(new CustomEvent('runFusionAnalysis'))
+      return say('Running Multi-A-I Fusion Analysis. Gemini, Grok, and ChatGPT are now collaborating on your strategic intelligence.')
+    }
+
+    if (cmd.includes('show fusion') || cmd.includes('fusion report') || cmd.includes('consensus score')) {
+      const saved = localStorage.getItem('ahk-fusion-analysis')
+      if (saved) {
+        try {
+          const data = JSON.parse(saved)
+          if (data.fusion) {
+            const { consensus_score, sources_used, summary } = data.fusion
+            return say(`Fusion Report: Consensus score is ${consensus_score} percent. Sources used: ${sources_used.join(', ')}. ${summary.substring(0, 200)}`)
+          }
+        } catch (e) {
+          console.error('Failed to read fusion report:', e)
+        }
+      }
+      return say('Run Fusion Analysis first to generate multi-A-I consensus report.')
+    }
+
     // ANALYSIS
     if (cmd.includes('run analysis') || cmd.includes('ai analysis')) {
       await onRunAnalysis?.()
@@ -269,11 +292,11 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
 
     // HELP
     if (cmd.includes('help') || cmd.includes('what can you do')) {
-      return say('You can say: stop to silence me, run copilot, investor brief, show next actions, risk report, run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, or ask Gemini.')
+      return say('You can say: stop to silence me, run fusion analysis, show fusion report, run copilot, investor brief, show next actions, risk report, run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, or ask Gemini.')
     }
 
     // FALLBACK
-    say('Command not recognized. Try: run copilot, investor brief, show next actions, or say stop to silence me. Say help for more options.')
+    say('Command not recognized. Try: run fusion analysis, run copilot, investor brief, show next actions, or say stop to silence me. Say help for more options.')
   }
 
   function start() {

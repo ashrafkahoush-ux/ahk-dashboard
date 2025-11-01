@@ -95,6 +95,136 @@ export default defineConfig({
           }))
         }
       })
+
+      // API: Grok Market Feed (Mock)
+      server.middlewares.use('/api/grok-feed', async (req, res) => {
+        try {
+          if (req.method === 'GET') {
+            // Health check
+            res.setHeader('Content-Type', 'application/json')
+            return res.end(JSON.stringify({ status: 'ok', service: 'Grok Mock API' }))
+          }
+
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            return res.end('Method Not Allowed')
+          }
+
+          let body = ''
+          req.on('data', chunk => body += chunk)
+          req.on('end', () => {
+            const { sectors = [], region = 'MENA', focusAreas = [] } = JSON.parse(body || '{}')
+            
+            // Simulate API delay
+            setTimeout(() => {
+              const mockResponse = {
+                summary: `MENA ${sectors.join('/')} sector shows strong growth momentum with ${focusAreas.length} focus areas tracked.`,
+                signals: [
+                  'Saudi Arabia EV infrastructure investment reaches $7B target',
+                  'UAE micro-mobility regulations updated (favorable)',
+                  'NEOM smart city mobility contracts opening Q1 2026',
+                  'Regional logistics costs down 18% YoY',
+                  'Climate tech funding in MENA up 127% in 2025'
+                ],
+                sentiment: {
+                  overall: 'bullish',
+                  score: 74,
+                  rationale: 'Strong government support and growing investment'
+                },
+                trending: ['#MENAMobility', '#SaudiEV', '#SmartCities', '#NEOM'],
+                competitors: [
+                  'Uber expanding Careem logistics',
+                  'Bolt launching e-scooter service in Dubai',
+                  'Local startup NextMove raised $45M Series B'
+                ],
+                regulatory: [
+                  'UAE Federal Transport Authority updated guidelines',
+                  'Saudi Arabia approved autonomous vehicle pilot'
+                ],
+                sources: Array(47).fill(null).map((_, i) => ({ id: i + 1, type: 'news' })),
+                timestamp: new Date().toISOString()
+              }
+              
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify(mockResponse))
+            }, 800) // Simulate network delay
+          })
+        } catch (error) {
+          console.error('Grok API error:', error)
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: 'Internal server error' }))
+        }
+      })
+
+      // API: ChatGPT-5 Narrative (Mock)
+      server.middlewares.use('/api/chatgpt5', async (req, res) => {
+        try {
+          if (req.method === 'GET') {
+            // Health check
+            res.setHeader('Content-Type', 'application/json')
+            return res.end(JSON.stringify({ status: 'ok', service: 'ChatGPT-5 Mock API' }))
+          }
+
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            return res.end('Method Not Allowed')
+          }
+
+          let body = ''
+          req.on('data', chunk => body += chunk)
+          req.on('end', () => {
+            const { prompt, context } = JSON.parse(body || '{}')
+            const { projectCount = 0, taskCount = 0 } = context || {}
+            
+            // Simulate API delay
+            setTimeout(() => {
+              const mockResponse = {
+                executiveSummary: `AHK Strategies demonstrates strong institutional capacity across ${projectCount} strategic mobility projects. With ${taskCount} tracked milestones, the organization exhibits mature program management capabilities. The MENA-focused portfolio leverages regional growth dynamics while diversifying across complementary mobility sectors. Current execution velocity positions AHK for institutional capital raising in the 2025-2026 window. Strategic timing and portfolio composition create attractive risk-adjusted returns for infrastructure and impact investors.`,
+                strategicInsights: [
+                  'Portfolio diversification across 3+ mobility sectors mitigates single-point risk',
+                  'MENA focus aligns with government Vision 2030 initiatives across GCC',
+                  'Execution momentum demonstrates institutional project delivery capability',
+                  'Feasibility studies position portfolio for institutional fundraising',
+                  'Market entry timing precedes expected 2026 regulatory harmonization'
+                ],
+                recommendations: [
+                  'Accelerate flagship projects through strategic partnerships with OEMs',
+                  'Target Q1 2025 for Series A conversations with infrastructure funds',
+                  'Develop ESG narrative highlighting sustainability alignment',
+                  'Consider pre-seed raise of $3-5M to reach beta/pilot milestones',
+                  'Establish advisory board with regional logistics/mobility executives'
+                ],
+                investorAppeal: {
+                  strengths: [
+                    'Diversified revenue streams',
+                    'High-growth MENA market',
+                    'Strong execution metrics',
+                    'Government mega-project alignment'
+                  ],
+                  concerns: [
+                    'Capital requirements for momentum',
+                    'Regulatory uncertainty',
+                    'Well-funded international competition',
+                    'Localization complexity'
+                  ],
+                  overallRating: 'Attractive (B+/A-)',
+                  targetInvestors: 'Infrastructure funds, family offices, impact investors'
+                },
+                tone: 'professional-optimistic',
+                confidence: 88,
+                timestamp: new Date().toISOString()
+              }
+              
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify(mockResponse))
+            }, 1200) // Simulate network delay
+          })
+        } catch (error) {
+          console.error('ChatGPT API error:', error)
+          res.statusCode = 500
+          res.end(JSON.stringify({ error: 'Internal server error' }))
+        }
+      })
     }
   }
 })
