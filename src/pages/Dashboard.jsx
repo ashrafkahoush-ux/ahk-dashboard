@@ -1,6 +1,8 @@
 import { Target, Rocket, TrendingUp, DollarSign, CheckCircle, Clock } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import MetricCard from '../components/MetricCard'
 import ProjectCard from '../components/ProjectCard'
+import VoiceConsole from '../components/VoiceConsole'
 import { useProjects, useRoadmap } from '../utils/useData'
 import { preparePrompt } from '../ai/autoAgent.browser'
 import metricsData from '../data/metrics.json'
@@ -9,12 +11,29 @@ export default function Dashboard() {
   const { overview, projectHealth, timeline} = metricsData
   const projects = useProjects()
   const roadmap = useRoadmap()
+  const navigate = useNavigate()
 
   const handleAIAnalysis = () => {
     const report = preparePrompt(projects, roadmap)
+    // Store report globally for voice agent access
+    window.__LAST_AI_REPORT__ = report
     alert('✅ AI Analysis Report Generated!\n\nCheck the browser console for full details.')
     console.log('\n🤖 AI STRATEGIC ANALYSIS REPORT\n')
     console.log(report)
+  }
+
+  const handleNavigate = (path) => {
+    navigate(path)
+  }
+
+  const handleToggleAutoSync = (flag) => {
+    if (flag) {
+      localStorage.setItem('aiAutoSync', 'true')
+      alert('✅ Auto-Sync Enabled!\n\nAI analysis will run every 24 hours.')
+    } else {
+      localStorage.removeItem('aiAutoSync')
+      alert('⏸️ Auto-Sync Disabled.')
+    }
   }
 
   return (
@@ -128,6 +147,7 @@ export default function Dashboard() {
           </button>
           <button 
             onClick={handleAIAnalysis}
+            data-run-ai-analysis
             className="flex items-center space-x-3 p-4 border-2 border-ahk-slate-200 rounded-lg hover:border-ahk-gold-500 hover:bg-ahk-slate-50 transition-all cursor-pointer"
           >
             <TrendingUp className="w-6 h-6 text-ahk-gold-600" />
@@ -139,6 +159,13 @@ export default function Dashboard() {
           </button>
         </div>
       </div>
+
+      {/* Voice Console */}
+      <VoiceConsole
+        onRunAnalysis={handleAIAnalysis}
+        onNavigate={handleNavigate}
+        onToggleAutoSync={handleToggleAutoSync}
+      />
     </div>
   )
 }
