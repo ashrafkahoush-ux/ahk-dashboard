@@ -16,7 +16,9 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   const [lang, setLang] = useState(() => {
     return localStorage.getItem('voiceLang') || 'EN'
   })
+  const [expanded, setExpanded] = useState(false)
   const agentRef = useRef(null)
+  const inactivityTimer = useRef(null)
 
   useEffect(() => {
     // Set language on mount
@@ -24,8 +26,14 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
     localStorage.setItem('voiceLang', lang)
 
     agentRef.current = createVoiceAgent({
-      onStatus: setStatus,
-      onTranscript: setTranscript,
+      onStatus: (s) => {
+        setStatus(s)
+        if (s === 'listening') setExpanded(true)
+      },
+      onTranscript: (t) => {
+        setTranscript(t)
+        resetInactivityTimer()
+      },
       onCommand: handleCommand
     })
 
@@ -45,13 +53,23 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
     return () => {
       agentRef.current?.stop()
       window.removeEventListener('keydown', onKey)
+      if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
     }
     // eslint-disable-next-line
   }, [status, lang])
 
+  function resetInactivityTimer() {
+    if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
+    inactivityTimer.current = setTimeout(() => {
+      if (status === 'idle') setExpanded(false)
+    }, 3000)
+  }
+
   function say(text) {
     setReply(text)
     agentRef.current?.speak(text)
+    setExpanded(true)
+    resetInactivityTimer()
   }
 
   function toggleLang() {
@@ -66,6 +84,21 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
     }
     const msg = newLang === 'AR' ? 'تم التبديل إلى العربية' : 'Switched to English'
     say(msg)
+  }
+
+  function toggleExpanded() {
+    if (expanded) {
+      setExpanded(false)
+    } else {
+      setExpanded(true)
+      agentRef.current?.start()
+    }
+  }
+
+  function stop() {
+    agentRef.current?.stop()
+    setStatus('idle')
+    setTimeout(() => setExpanded(false), 2000)
   }
 
   async function handleCommand(raw) {
@@ -175,79 +208,173 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   }
 
   return (
-    <div style={{
-      position: 'fixed',
-      right: 18,
-      top: 80,
-      zIndex: 9999,
-      background: '#0A192F',
-      color: '#F4E5B1',
-      border: '1px solid #D4AF37',
-      borderRadius: 12,
-      padding: 12,
-      width: 320,
-      boxShadow: '0 8px 24px rgba(0,0,0,.5)'
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            onClick={status === 'listening' ? stop : start}
-            style={{
-              background: status === 'listening' ? '#D4AF37' : '#1f2d4a',
-              color: status === 'listening' ? '#0A192F' : '#F4E5B1',
-              border: 'none',
-              padding: '8px 14px',
-              borderRadius: 10,
-              cursor: 'pointer',
-              fontWeight: 'bold'
-            }}
-          >
-            {status === 'listening' ? '● Listening' : '🎙️ Start Voice'}
-          </button>
-          <div style={{ opacity: 0.8, fontSize: 12 }}>
-            Status: {status}
-          </div>
-        </div>
-        <button
-          onClick={toggleLang}
-          style={{
-            background: '#1f2d4a',
-            color: '#D4AF37',
-            border: '1px solid #D4AF37',
-            padding: '6px 12px',
-            borderRadius: 8,
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            fontSize: 12
-          }}
-        >
-          [{lang}]
-        </button>
-      </div>
+    <>
+      {/* Floating Mic Button */}
+      <button
+        onClick={toggleExpanded}
+        title={`Start Voice Assistant (Press \`)`}
+        style={{
+          position: 'fixed',
+          right: 24,
+          bottom: 24,
+          zIndex: 9999,
+          width: 60,
+          height: 60,
+          borderRadius: '50%',
+          background: status === 'listening' 
+            ? 'linear-gradient(135deg, #D4AF37 0%, #F4E5B1 100%)'
+            : 'linear-gradient(135deg, #0A192F 0%, #1f2d4a 100%)',
+          color: status === 'listening' ? '#0A192F' : '#D4AF37',
+          border: status === 'listening' ? '3px solid #F4E5B1' : '2px solid #D4AF37',
+          fontSize: 24,
+          cursor: 'pointer',
+          boxShadow: status === 'listening' 
+            ? '0 8px 32px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.4)'
+            : '0 8px 24px rgba(0, 0, 0, 0.5)',
+          transition: 'all 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          animation: status === 'listening' ? 'pulse 2s infinite' : 'none'
+        }}
+      >
+        🎙️
+      </button>
 
-      <div style={{
-        background: '#101b33',
-        padding: 8,
-        borderRadius: 8,
-        minHeight: 38,
-        color: '#CCD6F6',
-        marginBottom: 6,
-        fontSize: 12
-      }}>
-        <strong>Heard:</strong> {transcript || <em>…</em>}
-      </div>
-      <div style={{
-        background: '#101b33',
-        padding: 8,
-        borderRadius: 8,
-        minHeight: 38,
-        maxHeight: 80,
-        overflowY: 'auto',
-        color: '#F4E5B1',
-        fontSize: 12
-      }}>
-        <strong>Reply:</strong> {reply || <em>Ready. Press ` to start.</em>}
-      </div>
-    </div>
+      {/* Expanded Chat Bubble */}
+      {expanded && (
+        <div style={{
+          position: 'fixed',
+          right: 24,
+          bottom: 94,
+          zIndex: 9998,
+          background: '#0A192F',
+          color: '#F4E5B1',
+          border: '1px solid #D4AF37',
+          borderRadius: 16,
+          padding: 14,
+          width: 320,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
+          animation: 'slideUp 0.3s ease-out'
+        }}>
+          {/* Header with Language Toggle */}
+          <div style={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            marginBottom: 10,
+            paddingBottom: 8,
+            borderBottom: '1px solid #1f2d4a'
+          }}>
+            <div style={{ 
+              fontSize: 13, 
+              fontWeight: 'bold',
+              color: status === 'listening' ? '#D4AF37' : '#8892B0'
+            }}>
+              {status === 'listening' ? '● Listening...' : 'Voice Assistant'}
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <button
+                onClick={toggleLang}
+                style={{
+                  background: '#1f2d4a',
+                  color: '#D4AF37',
+                  border: '1px solid #D4AF37',
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  fontWeight: 'bold'
+                }}
+              >
+                {lang}
+              </button>
+              {status === 'listening' && (
+                <button
+                  onClick={stop}
+                  style={{
+                    background: '#D4AF37',
+                    color: '#0A192F',
+                    border: 'none',
+                    padding: '4px 10px',
+                    borderRadius: 6,
+                    cursor: 'pointer',
+                    fontSize: 11,
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Stop
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Heard */}
+          {transcript && (
+            <div style={{
+              background: '#101b33',
+              padding: 8,
+              borderRadius: 8,
+              marginBottom: 8,
+              fontSize: 12,
+              color: '#CCD6F6'
+            }}>
+              <strong style={{ color: '#D4AF37' }}>Heard:</strong> {transcript}
+            </div>
+          )}
+
+          {/* Reply */}
+          {reply && (
+            <div style={{
+              background: '#101b33',
+              padding: 8,
+              borderRadius: 8,
+              fontSize: 12,
+              color: '#F4E5B1',
+              maxHeight: 100,
+              overflowY: 'auto'
+            }}>
+              <strong style={{ color: '#D4AF37' }}>Reply:</strong> {reply}
+            </div>
+          )}
+
+          {/* Initial State */}
+          {!transcript && !reply && (
+            <div style={{
+              fontSize: 12,
+              color: '#8892B0',
+              textAlign: 'center',
+              padding: 12
+            }}>
+              <em>Say a command or press ` to start...</em>
+            </div>
+          )}
+
+          {/* Arrow pointing down to button */}
+          <div style={{
+            position: 'absolute',
+            bottom: -8,
+            right: 26,
+            width: 0,
+            height: 0,
+            borderLeft: '8px solid transparent',
+            borderRight: '8px solid transparent',
+            borderTop: '8px solid #D4AF37'
+          }} />
+        </div>
+      )}
+
+      {/* CSS Animation */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); box-shadow: 0 8px 32px rgba(212, 175, 55, 0.6), 0 0 20px rgba(212, 175, 55, 0.4); }
+          50% { transform: scale(1.05); box-shadow: 0 8px 40px rgba(212, 175, 55, 0.8), 0 0 30px rgba(212, 175, 55, 0.6); }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </>
   )
 }
