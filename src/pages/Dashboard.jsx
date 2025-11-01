@@ -2,11 +2,19 @@ import { Target, Rocket, TrendingUp, DollarSign, CheckCircle, Clock } from 'luci
 import MetricCard from '../components/MetricCard'
 import ProjectCard from '../components/ProjectCard'
 import { useProjects } from '../utils/useData'
+import { preparePrompt } from '../ai/autoAgent.browser'
 import metricsData from '../data/metrics.json'
 
 export default function Dashboard() {
   const { overview, projectHealth, timeline} = metricsData
   const projects = useProjects()
+
+  const handleAIAnalysis = () => {
+    const report = preparePrompt()
+    alert('✅ AI Analysis Report Generated!\n\nCheck the browser console for full details.')
+    console.log('\n🤖 AI STRATEGIC ANALYSIS REPORT\n')
+    console.log(report)
+  }
 
   return (
     <div className="space-y-6">
@@ -117,7 +125,10 @@ export default function Dashboard() {
             <Target className="w-6 h-6 text-ahk-navy-700" />
             <span className="font-semibold text-ahk-navy-900">Update Roadmap</span>
           </button>
-          <button className="flex items-center space-x-3 p-4 border-2 border-ahk-slate-200 rounded-lg hover:border-ahk-gold-500 hover:bg-ahk-slate-50 transition-all">
+          <button 
+            onClick={handleAIAnalysis}
+            className="flex items-center space-x-3 p-4 border-2 border-ahk-slate-200 rounded-lg hover:border-ahk-gold-500 hover:bg-ahk-slate-50 transition-all cursor-pointer"
+          >
             <TrendingUp className="w-6 h-6 text-ahk-gold-600" />
             <span className="font-semibold text-ahk-navy-900">Run AI Analysis</span>
           </button>
