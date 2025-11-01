@@ -119,7 +119,7 @@ export default function Dashboard() {
             <span className="font-semibold text-ahk-navy-900">Update Roadmap</span>
           </button>
           <button 
-            onClick={handleAIAnalysis}
+            onClick={() => window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))}
             data-run-ai-analysis
             className="flex items-center space-x-3 p-4 border-2 border-ahk-slate-200 rounded-lg hover:border-ahk-gold-500 hover:bg-ahk-slate-50 transition-all cursor-pointer"
           >

@@ -13,18 +13,22 @@ import metricsData from './data/metrics.json'
 
 function AppContent() {
   const navigate = useNavigate()
-  const location = useLocation()
   const projects = useProjects()
   const roadmap = useRoadmap()
 
   const handleAIAnalysis = () => {
-    const result = preparePrompt(projects, roadmap, metricsData)
-    window.__LAST_AI_REPORT__ = result.text
-    window.__LAST_AI_CONTEXT__ = result.structured
-    alert('✅ AI Analysis Report Generated!\n\nCheck the browser console for full details.')
-    console.log('\n🤖 AI STRATEGIC ANALYSIS REPORT\n')
-    console.log(result.text)
-    console.log('\n📊 Structured Context:', result.structured)
+    try {
+      const result = preparePrompt(projects, roadmap, metricsData)
+      window.__LAST_AI_REPORT__ = result.text
+      window.__LAST_AI_CONTEXT__ = result.structured
+      alert('✅ AI Analysis Report Generated!\n\nCheck the browser console for full details.')
+      console.log('\n🤖 AI STRATEGIC ANALYSIS REPORT\n')
+      console.log(result.text)
+      console.log('\n📊 Structured Context:', result.structured)
+    } catch (error) {
+      console.error('AI Analysis error:', error)
+      alert('❌ Failed to run analysis. Check console for details.')
+    }
   }
 
   const handleNavigate = (path) => {
