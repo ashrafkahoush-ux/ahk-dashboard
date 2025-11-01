@@ -111,7 +111,10 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
         cmd.includes('shut up') || cmd.includes('enough') ||
         cmd.includes('قف') || cmd.includes('اسكت') || cmd.includes('كفى') || cmd.includes('خلاص')) {
       window.speechSynthesis.cancel() // Stop all speech immediately
+      agentRef.current?.stop() // Stop voice recognition too!
       setReply('')
+      setStatus('idle')
+      setTimeout(() => setExpanded(false), 1500) // Close bubble after 1.5s
       return // Don't say anything, just stop!
     }
 
@@ -366,23 +369,21 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
               >
                 {lang}
               </button>
-              {status === 'listening' && (
-                <button
-                  onClick={stop}
-                  style={{
-                    background: '#D4AF37',
-                    color: '#0A192F',
-                    border: 'none',
-                    padding: '4px 10px',
-                    borderRadius: 6,
-                    cursor: 'pointer',
-                    fontSize: 11,
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Stop
-                </button>
-              )}
+              <button
+                onClick={stop}
+                style={{
+                  background: status === 'listening' ? '#D4AF37' : '#8892B0',
+                  color: '#0A192F',
+                  border: 'none',
+                  padding: '4px 10px',
+                  borderRadius: 6,
+                  cursor: 'pointer',
+                  fontSize: 11,
+                  fontWeight: 'bold'
+                }}
+              >
+                ⏹️ Stop
+              </button>
             </div>
           </div>
 
