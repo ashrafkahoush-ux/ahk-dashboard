@@ -1,14 +1,48 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, Filter, FileText } from 'lucide-react'
 import TaskList from '../components/TaskList'
 import { useRoadmap, useSources, useProjects, groupTasksBySource, groupTasksByProject, getSourceById } from '../utils/useData'
 
 export default function Strategy() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const initialTasks = useRoadmap()
   const sources = useSources()
   const projects = useProjects()
   const [filterMode, setFilterMode] = useState('all') // all, by-project, by-source
   const [tasksState, setTasksState] = useState(initialTasks)
+
+  // Handle ?refresh=1 query parameter for cache-busting reload
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    if (searchParams.get('refresh') === '1') {
+      console.log('🔄 Refreshing roadmap data...')
+      
+      // Fetch fresh roadmap data with cache-busting
+      fetch(`/src/data/roadmap.json?v=${Date.now()}`)
+        .then(res => res.json())
+        .then(data => {
+          console.log('✅ Roadmap data refreshed:', data.length, 'tasks')
+          setTasksState(data)
+          
+          // Remove ?refresh=1 from URL without page reload
+          searchParams.delete('refresh')
+          const newSearch = searchParams.toString()
+          navigate(
+            {
+              pathname: location.pathname,
+              search: newSearch ? `?${newSearch}` : ''
+            },
+            { replace: true }
+          )
+        })
+        .catch(err => {
+          console.error('❌ Failed to refresh roadmap:', err)
+          alert('Failed to refresh roadmap data. Using cached version.')
+        })
+    }
+  }, [location.search, location.pathname, navigate])
 
   const handleTaskUpdate = (updatedTask) => {
     console.log('Task updated:', updatedTask)
