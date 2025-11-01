@@ -1,8 +1,10 @@
 import { TrendingUp, Users, Mail, MousePointer, BarChart3, Calendar } from 'lucide-react'
 import MetricCard from '../components/MetricCard'
 import MetricsChart from '../components/MetricsChart'
+import MetricsTable from '../components/MetricsTable'
 import analyticsData from '../data/marketing-analytics.json'
 import metricsData from '../data/metrics.json'
+import dailyMetrics from '../data/daily-metrics.json'
 
 export default function MarketingPulse() {
   const { weeklyMetrics } = metricsData
@@ -92,6 +94,12 @@ export default function MarketingPulse() {
           { key: 'formSubmissions', name: 'Leads Generated', color: '#D4AF37' }
         ]}
         title="Visits vs Leads Comparison"
+      />
+
+      {/* Daily Metrics Table */}
+      <MetricsTable 
+        data={dailyMetrics}
+        title="Daily Performance Metrics"
       />
 
       {/* Campaign Status */}

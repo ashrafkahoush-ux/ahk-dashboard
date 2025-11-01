@@ -1,92 +1,112 @@
 [
   {
-    "id": 1,
-    "title": "Complete strategic positioning document",
+    "id": "T001",
+    "title": "Finalize investor-ready HTML studies (Q-VAN, WOW, DVM)",
+    "description": "Ensure all scenarios, figures and branding are aligned.",
     "category": "Strategy",
     "priority": "high",
-    "status": "completed",
-    "dueDate": "2025-10-28",
-    "project": "Foundation"
+    "status": "pending",
+    "projectId": "P001",
+    "dueDate": "2025-11-15",
+    "project": "Q-VAN Localisation Hub"
   },
   {
-    "id": 2,
-    "title": "Design dashboard UI/UX wireframes",
-    "category": "Product",
-    "priority": "high",
-    "status": "completed",
-    "dueDate": "2025-10-30",
-    "project": "Dashboard"
-  },
-  {
-    "id": 3,
-    "title": "Set up React + Tailwind development environment",
-    "category": "Engineering",
-    "priority": "high",
-    "status": "in-progress",
-    "dueDate": "2025-11-01",
-    "project": "Dashboard"
-  },
-  {
-    "id": 4,
-    "title": "Create investor pitch deck template",
+    "id": "T002",
+    "title": "Create 1-page financial summary sheets",
+    "description": "One-pagers for each project with key IRR/NPV metrics.",
     "category": "Fundraising",
     "priority": "high",
-    "status": "not-started",
-    "dueDate": "2025-11-05",
-    "project": "Investor Relations"
+    "status": "pending",
+    "projectId": "P002",
+    "dueDate": "2025-11-20",
+    "project": "WOW E-Scooter Line"
   },
   {
-    "id": 5,
-    "title": "Develop Project Q-VAN MVP prototype",
-    "category": "Product",
-    "priority": "high",
-    "status": "not-started",
-    "dueDate": "2025-11-15",
-    "project": "qvan"
-  },
-  {
-    "id": 6,
-    "title": "Launch LinkedIn thought leadership campaign",
-    "category": "Marketing",
-    "priority": "medium",
-    "status": "not-started",
-    "dueDate": "2025-11-08",
-    "project": "Brand Awareness"
-  },
-  {
-    "id": 7,
-    "title": "Establish partnerships with 3 key dealers",
+    "id": "T003",
+    "title": "Anchor B2G LOIs for Q-VAN",
+    "description": "Secure Letters of Intent from government entities for vehicle localization.",
     "category": "Business Development",
     "priority": "high",
-    "status": "not-started",
-    "dueDate": "2025-11-20",
-    "project": "dvm"
+    "status": "pending",
+    "projectId": "P001",
+    "dueDate": "2025-11-25",
+    "project": "Q-VAN Localisation Hub"
   },
   {
-    "id": 8,
-    "title": "Finalize AI workflow automation setup",
+    "id": "T004",
+    "title": "Phase 1 SKD Assembly Start for WOW",
+    "description": "Initiate Semi-Knocked Down assembly for e-scooter production line.",
     "category": "Operations",
-    "priority": "medium",
-    "status": "in-progress",
-    "dueDate": "2025-11-03",
-    "project": "Automation"
-  },
-  {
-    "id": 9,
-    "title": "Create data room structure in Google Drive",
-    "category": "Operations",
-    "priority": "medium",
-    "status": "not-started",
-    "dueDate": "2025-11-06",
-    "project": "Investor Relations"
-  },
-  {
-    "id": 10,
-    "title": "Design customer onboarding flow for DVM",
-    "category": "Product",
     "priority": "high",
-    "status": "not-started",
+    "status": "pending",
+    "projectId": "P002",
+    "dueDate": "2025-12-01",
+    "project": "WOW E-Scooter Line"
+  },
+  {
+    "id": "T005",
+    "title": "Complete DVM market feasibility study",
+    "description": "Analyze Digital Vehicle Marketplace potential in target regions.",
+    "category": "Market Research",
+    "priority": "medium",
+    "status": "pending",
+    "projectId": "P003",
+    "dueDate": "2025-11-18",
+    "project": "DVM Platform"
+  },
+  {
+    "id": "T006",
+    "title": "Design Q-VAN assembly facility layout",
+    "description": "Create detailed floor plans and workflow optimization for vehicle assembly.",
+    "category": "Engineering",
+    "priority": "high",
+    "status": "pending",
+    "projectId": "P001",
+    "dueDate": "2025-11-22",
+    "project": "Q-VAN Localisation Hub"
+  },
+  {
+    "id": "T007",
+    "title": "Develop investor pitch deck for Series A",
+    "description": "Create comprehensive presentation with financial projections and market analysis.",
+    "category": "Fundraising",
+    "priority": "high",
+    "status": "pending",
+    "projectId": "P001",
+    "dueDate": "2025-11-10",
+    "project": "Q-VAN Localisation Hub"
+  },
+  {
+    "id": "T008",
+    "title": "Establish WOW supply chain partnerships",
+    "description": "Negotiate terms with component suppliers for e-scooter manufacturing.",
+    "category": "Supply Chain",
+    "priority": "high",
+    "status": "pending",
+    "projectId": "P002",
+    "dueDate": "2025-11-28",
+    "project": "WOW E-Scooter Line"
+  },
+  {
+    "id": "T009",
+    "title": "Launch AHK Strategies website update",
+    "description": "Refresh website with new project portfolio and capabilities.",
+    "category": "Marketing",
+    "priority": "medium",
+    "status": "pending",
+    "projectId": "P001",
     "dueDate": "2025-11-12",
-    "project": "dvm"
+    "project": "Brand Development"
+  },
+  {
+    "id": "T010",
+    "title": "Secure initial funding commitments",
+    "description": "Target $2M in commitments from angel investors and strategic partners.",
+    "category": "Fundraising",
+    "priority": "high",
+    "status": "pending",
+    "projectId": "P001",
+    "dueDate": "2025-12-15",
+    "project": "Q-VAN Localisation Hub"
   }
 ]

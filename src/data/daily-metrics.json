@@ -1,0 +1,58 @@
+[
+  {
+    "date": "2025-10-26",
+    "visitors": 95,
+    "leads": 3,
+    "conversionRate": 3.16,
+    "linkedInImpressions": 1200,
+    "emailsSent": 15
+  },
+  {
+    "date": "2025-10-27",
+    "visitors": 108,
+    "leads": 4,
+    "conversionRate": 3.70,
+    "linkedInImpressions": 1450,
+    "emailsSent": 18
+  },
+  {
+    "date": "2025-10-28",
+    "visitors": 112,
+    "leads": 4,
+    "conversionRate": 3.57,
+    "linkedInImpressions": 1580,
+    "emailsSent": 20
+  },
+  {
+    "date": "2025-10-29",
+    "visitors": 118,
+    "leads": 5,
+    "conversionRate": 4.24,
+    "linkedInImpressions": 1720,
+    "emailsSent": 22
+  },
+  {
+    "date": "2025-10-30",
+    "visitors": 115,
+    "leads": 4,
+    "conversionRate": 3.48,
+    "linkedInImpressions": 1650,
+    "emailsSent": 19
+  },
+  {
+    "date": "2025-10-31",
+    "visitors": 120,
+    "leads": 5,
+    "conversionRate": 4.17,
+    "linkedInImpressions": 1800,
+    "emailsSent": 25
+  },
+  {
+    "date": "2025-11-01",
+    "visitors": 145,
+    "leads": 8,
+    "conversionRate": 5.52,
+    "linkedInImpressions": 2100,
+    "emailsSent": 28
+  }
+]

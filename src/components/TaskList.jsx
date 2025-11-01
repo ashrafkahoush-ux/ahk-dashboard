@@ -8,7 +8,8 @@ export default function TaskList({ tasks: initialTasks, onTaskUpdate }) {
   const toggleTask = (taskId) => {
     const updatedTasks = tasks.map(task => {
       if (task.id === taskId) {
-        const newStatus = task.status === 'completed' ? 'not-started' : 'completed'
+        // Toggle between pending and completed
+        const newStatus = task.status === 'completed' ? 'pending' : 'completed'
         const updatedTask = { ...task, status: newStatus }
         
         // Call parent callback if provided
@@ -32,9 +33,10 @@ export default function TaskList({ tasks: initialTasks, onTaskUpdate }) {
     const badges = {
       'completed': 'bg-green-100 text-green-800 border-green-300',
       'in-progress': 'bg-blue-100 text-blue-800 border-blue-300',
+      'pending': 'bg-yellow-100 text-yellow-800 border-yellow-300',
       'not-started': 'bg-gray-100 text-gray-800 border-gray-300'
     }
-    return badges[status] || badges['not-started']
+    return badges[status] || badges['pending']
   }
 
   const getPriorityBadge = (priority) => {
@@ -74,7 +76,7 @@ export default function TaskList({ tasks: initialTasks, onTaskUpdate }) {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
-        {['all', 'not-started', 'in-progress', 'completed'].map(status => (
+        {['all', 'pending', 'in-progress', 'completed'].map(status => (
           <button
             key={status}
             onClick={() => setFilter(status)}

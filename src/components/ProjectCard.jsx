@@ -1,4 +1,4 @@
-import { Clock, CheckCircle, AlertCircle, Circle } from 'lucide-react'
+import { Clock, CheckCircle, AlertCircle, Circle, User, DollarSign, Calendar } from 'lucide-react'
 
 export default function ProjectCard({ project }) {
   const statusConfig = {
@@ -73,6 +73,31 @@ export default function ProjectCard({ project }) {
           </div>
         </div>
       )}
+
+      {/* Additional Info */}
+      <div className="mt-4 pt-4 border-t border-ahk-slate-200 space-y-2">
+        {project.owner && (
+          <div className="flex items-center text-sm text-ahk-slate-600">
+            <User className="w-4 h-4 mr-2 text-ahk-navy-500" />
+            <span className="font-medium text-ahk-slate-700">Owner:</span>
+            <span className="ml-1">{project.owner}</span>
+          </div>
+        )}
+        {project.startDate && (
+          <div className="flex items-center text-sm text-ahk-slate-600">
+            <Calendar className="w-4 h-4 mr-2 text-ahk-navy-500" />
+            <span className="font-medium text-ahk-slate-700">Started:</span>
+            <span className="ml-1">{new Date(project.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}</span>
+          </div>
+        )}
+        {project.fundingStage && (
+          <div className="flex items-center text-sm">
+            <DollarSign className="w-4 h-4 mr-2 text-ahk-gold-500" />
+            <span className="font-medium text-ahk-slate-700">Funding:</span>
+            <span className="ml-1 text-ahk-navy-700 font-semibold">{project.fundingStage}</span>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
