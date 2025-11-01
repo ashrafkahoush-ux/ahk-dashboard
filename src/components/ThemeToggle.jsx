@@ -26,10 +26,10 @@ export default function ThemeToggle() {
       onClick={toggleTheme}
       style={{
         position: 'fixed',
-        bottom: 30,
-        left: 30,
-        width: 56,
-        height: 56,
+        top: 20,
+        left: 120,
+        width: 40,
+        height: 40,
         borderRadius: '50%',
         border: isDark 
           ? '2px solid rgba(157, 78, 221, 0.5)' 
@@ -41,7 +41,7 @@ export default function ThemeToggle() {
           ? '0 8px 32px rgba(157, 78, 221, 0.4), inset 0 0 20px rgba(157, 78, 221, 0.1)'
           : '0 4px 12px rgba(99, 102, 241, 0.2)',
         cursor: 'pointer',
-        fontSize: 28,
+        fontSize: 20,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
