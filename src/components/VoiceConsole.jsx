@@ -126,6 +126,68 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
       return say('Opening asset vault.')
     }
 
+    // AI CO-PILOT COMMANDS
+    if (cmd.includes('run copilot') || cmd.includes('co-pilot analysis')) {
+      // Trigger Co-Pilot analysis by dispatching custom event
+      window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))
+      return say('Running Co-Pilot analysis. Check the floating robot button for strategic insights.')
+    }
+
+    if (cmd.includes('investor brief') || cmd.includes('give me investor summary')) {
+      const context = window.__LAST_AI_CONTEXT__
+      if (!context?.analysis?.projectSummary) {
+        return say('No analysis available yet. Please run Co-Pilot analysis first.')
+      }
+      // Read brief from stored analysis
+      const saved = localStorage.getItem('ahk-ai-analysis')
+      if (saved) {
+        try {
+          const data = JSON.parse(saved)
+          if (data.analysis?.investorBrief) {
+            return say(data.analysis.investorBrief)
+          }
+        } catch (e) {
+          console.error('Failed to read stored analysis:', e)
+        }
+      }
+      return say('Run Co-Pilot analysis to generate investor brief.')
+    }
+
+    if (cmd.includes('show next actions') || cmd.includes('what should i do next')) {
+      const saved = localStorage.getItem('ahk-ai-analysis')
+      if (saved) {
+        try {
+          const data = JSON.parse(saved)
+          if (data.analysis?.nextActions) {
+            const actions = data.analysis.nextActions.slice(0, 3).join('. Next, ')
+            return say(`Here are your top 3 actions: ${actions}`)
+          }
+        } catch (e) {
+          console.error('Failed to read stored analysis:', e)
+        }
+      }
+      return say('Run Co-Pilot analysis to see recommended actions.')
+    }
+
+    if (cmd.includes('risk report') || cmd.includes('what are the risks')) {
+      const saved = localStorage.getItem('ahk-ai-analysis')
+      if (saved) {
+        try {
+          const data = JSON.parse(saved)
+          if (data.analysis?.riskMap) {
+            const { high, medium, low } = data.analysis.riskMap
+            const highCount = high?.length || 0
+            const medCount = medium?.length || 0
+            const lowCount = low?.length || 0
+            return say(`Risk report: ${highCount} high priority risks, ${medCount} medium, ${lowCount} low. Check Co-Pilot panel for details.`)
+          }
+        } catch (e) {
+          console.error('Failed to read stored analysis:', e)
+        }
+      }
+      return say('Run Co-Pilot analysis to generate risk map.')
+    }
+
     // ANALYSIS
     if (cmd.includes('run analysis') || cmd.includes('ai analysis')) {
       await onRunAnalysis?.()
@@ -175,10 +237,12 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
       try {
         say('Consulting Gemini. Please wait.')
         const latest = window.__LAST_AI_REPORT__ || 'No local report captured yet.'
+        const structured = window.__LAST_AI_CONTEXT__ || null
         const ai = await askGemini({ 
           projects: projectsData, 
           roadmap: roadmapData, 
-          latestReport: latest 
+          latestReport: latest,
+          structured 
         })
         say('Gemini returned fresh advice. Check the reply box for details.')
         setReply(ai?.advice || ai?.message || 'No advice field returned.')
@@ -191,11 +255,11 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
 
     // HELP
     if (cmd.includes('help') || cmd.includes('what can you do')) {
-      return say('You can say: run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, disable autosync, ask Gemini.')
+      return say('You can say: run copilot, investor brief, show next actions, risk report, run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, ask Gemini.')
     }
 
     // FALLBACK
-    say('Command not recognized. Try: run analysis, what is overdue, open strategy, or say help for more options.')
+    say('Command not recognized. Try: run copilot, investor brief, show next actions, or say help for more options.')
   }
 
   function start() {

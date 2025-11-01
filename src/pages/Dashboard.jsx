@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import MetricCard from '../components/MetricCard'
 import ProjectCard from '../components/ProjectCard'
 import VoiceConsole from '../components/VoiceConsole'
+import AICoPilot from '../components/AICoPilot'
 import { useProjects, useRoadmap } from '../utils/useData'
 import { preparePrompt } from '../ai/autoAgent.browser'
 import metricsData from '../data/metrics.json'
@@ -14,12 +15,15 @@ export default function Dashboard() {
   const navigate = useNavigate()
 
   const handleAIAnalysis = () => {
-    const report = preparePrompt(projects, roadmap)
-    // Store report globally for voice agent access
-    window.__LAST_AI_REPORT__ = report
+    const result = preparePrompt(projects, roadmap, metricsData)
+    // Store text report globally for voice agent access
+    window.__LAST_AI_REPORT__ = result.text
+    // Store structured context for AI integrations
+    window.__LAST_AI_CONTEXT__ = result.structured
     alert('✅ AI Analysis Report Generated!\n\nCheck the browser console for full details.')
     console.log('\n🤖 AI STRATEGIC ANALYSIS REPORT\n')
-    console.log(report)
+    console.log(result.text)
+    console.log('\n📊 Structured Context:', result.structured)
   }
 
   const handleNavigate = (path) => {
@@ -166,6 +170,9 @@ export default function Dashboard() {
         onNavigate={handleNavigate}
         onToggleAutoSync={handleToggleAutoSync}
       />
+
+      {/* AI Co-Pilot */}
+      <AICoPilot />
     </div>
   )
 }

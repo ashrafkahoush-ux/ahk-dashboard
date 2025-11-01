@@ -86,18 +86,57 @@ ${lagging.map(p => `- ${p.name} (${p.progress}%) - Needs attention`).join('\n')}
 }
 
 /**
- * Generates a comprehensive AI analysis prompt
+ * Generates a comprehensive AI analysis prompt with enhanced context
  * @param {Array} projects - Projects array
  * @param {Array} roadmap - Roadmap tasks array
- * @returns {string} Combined analysis prompt for AI processing
+ * @param {Object} metrics - Optional metrics data
+ * @returns {Object} Structured context for AI processing
  */
-export function preparePrompt(projects = [], roadmap = []) {
+export function preparePrompt(projects = [], roadmap = [], metrics = null) {
   try {
+    const timestamp = new Date().toISOString()
     const summary = summarizeProjects(projects)
     const roadmapAnalysis = analyzeRoadmap(roadmap)
-    const timestamp = new Date().toISOString()
     
-    const combined = `
+    // Build structured context for Gemini
+    const structuredContext = {
+      timestamp,
+      organization: 'AHK Strategies',
+      unit: 'Strategic Mobility Program',
+      stage: 'Pre-Series A',
+      market: 'MENA',
+      data: {
+        projects: projects.map(p => ({
+          id: p.id,
+          name: p.name,
+          progress: p.progress,
+          stage: p.stage,
+          budget: p.budget_eur,
+          nextMilestone: p.next_milestone
+        })),
+        roadmap: roadmap.map(t => ({
+          id: t.id,
+          title: t.title,
+          status: t.status,
+          priority: t.priority,
+          due: t.due,
+          projectId: t.projectId
+        })),
+        metrics: metrics || {
+          activeProjects: projects.length,
+          avgProgress: (projects.reduce((sum, p) => sum + (p.progress || 0), 0) / projects.length).toFixed(1),
+          totalTasks: roadmap.length,
+          completedTasks: roadmap.filter(t => t.status === 'done').length
+        }
+      },
+      analysis: {
+        projectSummary: summary,
+        roadmapInsights: roadmapAnalysis
+      }
+    }
+    
+    // Legacy text prompt for display/logging
+    const textPrompt = `
 ==============================================
 AHK STRATEGIC DASHBOARD – AI ANALYSIS CONTEXT
 ==============================================
@@ -111,35 +150,46 @@ ${roadmapAnalysis}
 -----------------------------------
 Using the data above, provide:
 
-1. **Strategic Risk & Opportunity Summary** (3-5 sentences)
-   - Identify critical risks based on overdue tasks and lagging projects
-   - Highlight opportunities from leading projects
-   - Assess overall portfolio health
+1. **Investor Brief** (2-3 sentences)
+   - Portfolio health snapshot
+   - Key momentum indicators
+   - Risk/opportunity balance
 
-2. **Next Three Priorities** (Action items)
-   - What should be tackled immediately?
-   - Which tasks would have the highest impact?
-   - Resource allocation recommendations
+2. **Next 3 Actions** (Prioritized tasks)
+   - Immediate action with highest ROI
+   - Critical blocker to remove
+   - Strategic opportunity to capture
 
-3. **Milestone Confidence Assessment**
-   - Likelihood of achieving next milestones (1-100%)
-   - Key blockers and dependencies
-   - Timeline risk factors
+3. **Risk Map**
+   - HIGH: Critical issues requiring immediate attention
+   - MEDIUM: Developing concerns to monitor
+   - LOW: Minor optimization opportunities
 
 4. **Strategic Recommendations**
-   - Resource reallocation suggestions
-   - Risk mitigation strategies
-   - Quick wins to boost momentum
+   - Resource allocation adjustments
+   - Timeline optimization suggestions
+   - Quick wins to accelerate momentum
 
 ---
-💡 NOTE: This analysis is for AHK Strategies' strategic mobility portfolio
-Context: Pre-Series A funding stage, MENA market focus, localization strategy
+💡 Context: Pre-Series A mobility portfolio, MENA focus, localization strategy
+🎯 Goal: Actionable insights for founder and investor communications
 `
 
-    return combined
+    // Store in window for voice access
+    window.__LAST_AI_CONTEXT__ = structuredContext
+
+    return {
+      structured: structuredContext,
+      text: textPrompt,
+      timestamp
+    }
   } catch (error) {
     console.error('Error preparing prompt:', error)
-    return `❌ Error preparing AI prompt: ${error.message}`
+    return {
+      structured: null,
+      text: `❌ Error preparing AI prompt: ${error.message}`,
+      timestamp: new Date().toISOString()
+    }
   }
 }
 
