@@ -1,0 +1,27 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-ahk-slate-50 text-ahk-slate-900 antialiased;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-lg shadow-md p-6 border border-ahk-slate-200;
+  }
+  
+  .btn-primary {
+    @apply bg-ahk-navy-700 text-white px-4 py-2 rounded-lg hover:bg-ahk-navy-800 transition-colors font-medium;
+  }
+  
+  .btn-secondary {
+    @apply bg-ahk-gold-500 text-white px-4 py-2 rounded-lg hover:bg-ahk-gold-600 transition-colors font-medium;
+  }
+  
+  .metric-card {
+    @apply bg-gradient-to-br from-ahk-navy-700 to-ahk-navy-900 text-white rounded-xl p-6 shadow-lg;
+  }
+}

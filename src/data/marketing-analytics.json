@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "date": "2025-10-25",
+    "websiteVisits": 1100,
+    "linkedInImpressions": 7200,
+    "formSubmissions": 18,
+    "emailsSent": 45,
+    "emailOpens": 16
+  },
+  {
+    "id": 2,
+    "date": "2025-10-26",
+    "websiteVisits": 1180,
+    "linkedInImpressions": 7800,
+    "formSubmissions": 21,
+    "emailsSent": 52,
+    "emailOpens": 19
+  },
+  {
+    "id": 3,
+    "date": "2025-10-27",
+    "websiteVisits": 1250,
+    "linkedInImpressions": 8100,
+    "formSubmissions": 23,
+    "emailsSent": 48,
+    "emailOpens": 18
+  },
+  {
+    "id": 4,
+    "date": "2025-10-28",
+    "websiteVisits": 1320,
+    "linkedInImpressions": 8500,
+    "formSubmissions": 25,
+    "emailsSent": 55,
+    "emailOpens": 21
+  },
+  {
+    "id": 5,
+    "date": "2025-10-29",
+    "websiteVisits": 1420,
+    "linkedInImpressions": 9200,
+    "formSubmissions": 28,
+    "emailsSent": 60,
+    "emailOpens": 24
+  },
+  {
+    "id": 6,
+    "date": "2025-10-30",
+    "websiteVisits": 1580,
+    "linkedInImpressions": 9800,
+    "formSubmissions": 32,
+    "emailsSent": 58,
+    "emailOpens": 22
+  },
+  {
+    "id": 7,
+    "date": "2025-10-31",
+    "websiteVisits": 1650,
+    "linkedInImpressions": 10200,
+    "formSubmissions": 35,
+    "emailsSent": 62,
+    "emailOpens": 26
+  }
+]

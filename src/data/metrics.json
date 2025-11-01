@@ -1,0 +1,35 @@
+{
+  "overview": {
+    "totalTasks": 100,
+    "completedTasks": 12,
+    "inProgressTasks": 8,
+    "activeProjects": 3,
+    "totalBudget": "$580K",
+    "projectedROI": "380%"
+  },
+  "weeklyMetrics": {
+    "websiteVisits": 1250,
+    "linkedInImpressions": 8500,
+    "formSubmissions": 23,
+    "emailEngagement": "34%",
+    "leadQuality": "High"
+  },
+  "projectHealth": {
+    "onTrack": 2,
+    "atRisk": 0,
+    "delayed": 0,
+    "planning": 1
+  },
+  "timeline": {
+    "currentPhase": "Foundation & MVP Development",
+    "nextMilestone": "Dashboard Launch",
+    "daysToNextMilestone": 7,
+    "quarterProgress": 35
+  },
+  "team": {
+    "totalHours": 320,
+    "productivity": "92%",
+    "velocity": "High",
+    "burnRate": "$45K/month"
+  }
+}

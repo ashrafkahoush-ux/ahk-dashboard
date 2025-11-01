@@ -1,0 +1,44 @@
+[
+  {
+    "id": "qvan",
+    "name": "Project Q-VAN",
+    "description": "Quantum Value Acceleration Network - Revolutionary mobility solution",
+    "status": "in-progress",
+    "progress": 35,
+    "nextMilestone": "MVP Development",
+    "timeline": "Q1 2026 Target Launch",
+    "category": "Core Product",
+    "priority": "high",
+    "team": ["Product", "Engineering", "Design"],
+    "budget": "$250K",
+    "roi": "450%"
+  },
+  {
+    "id": "wow",
+    "name": "Project WOW",
+    "description": "Wheels on Wealth - Financial mobility platform",
+    "status": "planning",
+    "progress": 15,
+    "nextMilestone": "Market Research",
+    "timeline": "Q2 2026 Launch Window",
+    "category": "Innovation",
+    "priority": "medium",
+    "team": ["Strategy", "Partnerships"],
+    "budget": "$150K",
+    "roi": "320%"
+  },
+  {
+    "id": "dvm",
+    "name": "Project DVM",
+    "description": "Digital Vehicle Marketplace - B2B2C ecosystem",
+    "status": "on-track",
+    "progress": 65,
+    "nextMilestone": "Beta Testing",
+    "timeline": "Q4 2025 Soft Launch",
+    "category": "Platform",
+    "priority": "high",
+    "team": ["Engineering", "Sales", "Marketing"],
+    "budget": "$180K",
+    "roi": "380%"
+  }
+]

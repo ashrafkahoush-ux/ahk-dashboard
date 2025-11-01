@@ -1,0 +1,92 @@
+[
+  {
+    "id": 1,
+    "title": "Complete strategic positioning document",
+    "category": "Strategy",
+    "priority": "high",
+    "status": "completed",
+    "dueDate": "2025-10-28",
+    "project": "Foundation"
+  },
+  {
+    "id": 2,
+    "title": "Design dashboard UI/UX wireframes",
+    "category": "Product",
+    "priority": "high",
+    "status": "completed",
+    "dueDate": "2025-10-30",
+    "project": "Dashboard"
+  },
+  {
+    "id": 3,
+    "title": "Set up React + Tailwind development environment",
+    "category": "Engineering",
+    "priority": "high",
+    "status": "in-progress",
+    "dueDate": "2025-11-01",
+    "project": "Dashboard"
+  },
+  {
+    "id": 4,
+    "title": "Create investor pitch deck template",
+    "category": "Fundraising",
+    "priority": "high",
+    "status": "not-started",
+    "dueDate": "2025-11-05",
+    "project": "Investor Relations"
+  },
+  {
+    "id": 5,
+    "title": "Develop Project Q-VAN MVP prototype",
+    "category": "Product",
+    "priority": "high",
+    "status": "not-started",
+    "dueDate": "2025-11-15",
+    "project": "qvan"
+  },
+  {
+    "id": 6,
+    "title": "Launch LinkedIn thought leadership campaign",
+    "category": "Marketing",
+    "priority": "medium",
+    "status": "not-started",
+    "dueDate": "2025-11-08",
+    "project": "Brand Awareness"
+  },
+  {
+    "id": 7,
+    "title": "Establish partnerships with 3 key dealers",
+    "category": "Business Development",
+    "priority": "high",
+    "status": "not-started",
+    "dueDate": "2025-11-20",
+    "project": "dvm"
+  },
+  {
+    "id": 8,
+    "title": "Finalize AI workflow automation setup",
+    "category": "Operations",
+    "priority": "medium",
+    "status": "in-progress",
+    "dueDate": "2025-11-03",
+    "project": "Automation"
+  },
+  {
+    "id": 9,
+    "title": "Create data room structure in Google Drive",
+    "category": "Operations",
+    "priority": "medium",
+    "status": "not-started",
+    "dueDate": "2025-11-06",
+    "project": "Investor Relations"
+  },
+  {
+    "id": 10,
+    "title": "Design customer onboarding flow for DVM",
+    "category": "Product",
+    "priority": "high",
+    "status": "not-started",
+    "dueDate": "2025-11-12",
+    "project": "dvm"
+  }
+]
