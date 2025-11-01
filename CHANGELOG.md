@@ -143,5 +143,5 @@ This is a private project for AHK Strategies. For internal updates:
 
 **Project:** AHK Strategic Dashboard  
 **Repository:** ahk-dashboard (Private)  
-**Maintainer:** Ashraf Khan  
+**Maintainer:** Ashraf Kahoush  
 **Last Updated:** November 1, 2025

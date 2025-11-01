@@ -407,7 +407,7 @@ npm run build
 
 ## 📞 Support & Contact
 
-**Project Owner:** Ashraf Khan (AHK Strategies)  
+**Project Owner:** Ashraf Kahoush (AHK Strategies)  
 **Version:** 1.0.0  
 **Last Updated:** November 1, 2025  
 **Repository:** Private GitHub repository `ahk-dashboard`

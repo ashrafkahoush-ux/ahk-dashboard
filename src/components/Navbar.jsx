@@ -49,7 +49,7 @@ export default function Navbar({ toggleSidebar }) {
           {/* User profile */}
           <div className="flex items-center space-x-3 pl-4 border-l border-ahk-slate-200">
             <div className="hidden md:block text-right">
-              <p className="text-sm font-semibold text-ahk-navy-900">Ashraf Khan</p>
+              <p className="text-sm font-semibold text-ahk-navy-900">Ashraf Kahoush</p>
               <p className="text-xs text-ahk-slate-500">Strategic Lead</p>
             </div>
             <div className="w-10 h-10 bg-ahk-navy-700 rounded-full flex items-center justify-center">

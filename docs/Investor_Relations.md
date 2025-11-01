@@ -134,7 +134,7 @@ Call-to-Action: "Request Investor Overview"
 ```
 Hi [Investor Name],
 
-I'm Ashraf Khan, founder of AHK Strategies, and I'm reaching out to 
+I'm Ashraf Kahoush, founder of AHK Strategies, and I'm reaching out to 
 share an exciting opportunity in the strategic mobility space.
 
 We're building [brief 1-sentence description], targeting a [$X billion] 
@@ -149,7 +149,7 @@ I'd love to share more details and explore potential partnership.
 Would you be open to a brief call next week?
 
 Best regards,
-Ashraf Khan
+Ashraf Kahoush
 Founder, AHK Strategies
 [LinkedIn] [Website]
 ```
@@ -206,7 +206,7 @@ Please let me know if you have any questions or need additional
 information. I'm happy to schedule a call to walk through the materials.
 
 Best regards,
-Ashraf Khan
+Ashraf Kahoush
 Founder, AHK Strategies
 📧 [email] | 📱 [phone] | 💼 [LinkedIn]
 ```
