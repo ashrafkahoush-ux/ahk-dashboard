@@ -1,16 +1,17 @@
 import { Target, Rocket, TrendingUp, DollarSign, CheckCircle, Clock } from 'lucide-react'
 import MetricCard from '../components/MetricCard'
 import ProjectCard from '../components/ProjectCard'
-import { useProjects } from '../utils/useData'
+import { useProjects, useRoadmap } from '../utils/useData'
 import { preparePrompt } from '../ai/autoAgent.browser'
 import metricsData from '../data/metrics.json'
 
 export default function Dashboard() {
   const { overview, projectHealth, timeline} = metricsData
   const projects = useProjects()
+  const roadmap = useRoadmap()
 
   const handleAIAnalysis = () => {
-    const report = preparePrompt()
+    const report = preparePrompt(projects, roadmap)
     alert('✅ AI Analysis Report Generated!\n\nCheck the browser console for full details.')
     console.log('\n🤖 AI STRATEGIC ANALYSIS REPORT\n')
     console.log(report)

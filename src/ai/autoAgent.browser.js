@@ -1,19 +1,21 @@
-// Browser-compatible version of autoAgent (no fs/path dependencies)
-import projectsData from '../data/projects.json'
-import roadmapData from '../data/roadmap.json'
+// Browser-compatible version of autoAgent (no imports, data passed as parameters)
 
 /**
- * Analyzes the roadmap and generates insights (browser version)
+ * Analyzes the roadmap and generates insights
+ * @param {Array} roadmap - Roadmap tasks array
  * @returns {string} Formatted roadmap analysis report
  */
-export function analyzeRoadmap() {
+export function analyzeRoadmap(roadmap = []) {
   try {
-    const roadmap = roadmapData
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-    const overdue = roadmap.filter(t => new Date(t.due) < today && t.status !== 'completed')
-    const highPriority = roadmap.filter(t => t.priority === 'high' && t.status !== 'completed')
-    const completed = roadmap.filter(t => t.status === 'completed')
+    const overdue = roadmap.filter(t => {
+      const dueDate = new Date(t.due)
+      return dueDate < today && t.status !== 'done'
+    })
+    const highPriority = roadmap.filter(t => t.priority === 'high' && t.status !== 'done')
+    const completed = roadmap.filter(t => t.status === 'done')
     const inProgress = roadmap.filter(t => t.status === 'in-progress')
 
     return `
@@ -40,14 +42,17 @@ ${highPriority.map(t => `- ${t.title} (${t.projectId || 'No project'})`).join('\
 }
 
 /**
- * Summarizes all projects (browser version)
+ * Summarizes all projects
+ * @param {Array} projects - Projects array
  * @returns {string} Formatted project summary report
  */
-export function summarizeProjects() {
+export function summarizeProjects(projects = []) {
   try {
-    const projects = projectsData
-
     const total = projects.length
+    if (total === 0) {
+      return '❌ No projects data available'
+    }
+
     const avgProgress = (
       projects.reduce((sum, p) => sum + (p.progress || 0), 0) / total
     ).toFixed(1)
@@ -81,23 +86,26 @@ ${lagging.map(p => `- ${p.name} (${p.progress}%) - Needs attention`).join('\n')}
 }
 
 /**
- * Generates a comprehensive AI analysis prompt (browser version)
+ * Generates a comprehensive AI analysis prompt
+ * @param {Array} projects - Projects array
+ * @param {Array} roadmap - Roadmap tasks array
  * @returns {string} Combined analysis prompt for AI processing
  */
-export function preparePrompt() {
+export function preparePrompt(projects = [], roadmap = []) {
   try {
-    const summary = summarizeProjects()
-    const roadmap = analyzeRoadmap()
+    const summary = summarizeProjects(projects)
+    const roadmapAnalysis = analyzeRoadmap(roadmap)
     const timestamp = new Date().toISOString()
     
     const combined = `
+==============================================
 AHK STRATEGIC DASHBOARD – AI ANALYSIS CONTEXT
 ==============================================
 Generated: ${timestamp}
 
 ${summary}
 
-${roadmap}
+${roadmapAnalysis}
 
 📍 STRATEGIC ANALYSIS INSTRUCTIONS:
 -----------------------------------
@@ -124,15 +132,10 @@ Using the data above, provide:
    - Quick wins to boost momentum
 
 ---
-💡 NOTE: This analysis is for AHK Strategies' strategic mobility portfolio (Q-VAN, WOW, DVM projects)
+💡 NOTE: This analysis is for AHK Strategies' strategic mobility portfolio
 Context: Pre-Series A funding stage, MENA market focus, localization strategy
 `
 
-    // Store in localStorage for download
-    localStorage.setItem('ahk-last-ai-report', combined)
-    localStorage.setItem('ahk-last-ai-report-timestamp', timestamp)
-    
-    console.log(`✅ AI Analysis Report generated at ${timestamp}`)
     return combined
   } catch (error) {
     console.error('Error preparing prompt:', error)
@@ -140,31 +143,8 @@ Context: Pre-Series A funding stage, MENA market focus, localization strategy
   }
 }
 
-/**
- * Download the generated report as a text file
- */
-export function downloadReport() {
-  const report = localStorage.getItem('ahk-last-ai-report')
-  if (!report) {
-    alert('No report available. Generate one first!')
-    return
-  }
-
-  const dateStr = new Date().toISOString().slice(0, 10)
-  const blob = new Blob([report], { type: 'text/plain' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `AI_Analysis_Report_${dateStr}.txt`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
 export default {
   analyzeRoadmap,
   summarizeProjects,
-  preparePrompt,
-  downloadReport
+  preparePrompt
 }
