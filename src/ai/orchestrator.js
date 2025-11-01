@@ -15,7 +15,7 @@
  * @module orchestrator
  */
 
-import { fetchGeminiAnalysis } from './gemini.js'
+import { fetchGeminiAnalysis } from '../api/geminiClient.js'
 import { fetchGrokMarketFeed } from './GrokClient.js'
 import { fetchChatGPTNarrative } from './ChatGPTClient.js'
 
