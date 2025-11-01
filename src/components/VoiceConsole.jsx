@@ -178,15 +178,15 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
     <div style={{
       position: 'fixed',
       right: 18,
-      bottom: 18,
+      top: 80,
       zIndex: 9999,
       background: '#0A192F',
       color: '#F4E5B1',
       border: '1px solid #D4AF37',
-      borderRadius: 14,
-      padding: 14,
-      width: 360,
-      boxShadow: '0 10px 30px rgba(0,0,0,.4)'
+      borderRadius: 12,
+      padding: 12,
+      width: 320,
+      boxShadow: '0 8px 24px rgba(0,0,0,.5)'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -227,22 +227,26 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
 
       <div style={{
         background: '#101b33',
-        padding: 10,
-        borderRadius: 10,
-        minHeight: 46,
+        padding: 8,
+        borderRadius: 8,
+        minHeight: 38,
         color: '#CCD6F6',
-        marginBottom: 8
+        marginBottom: 6,
+        fontSize: 12
       }}>
         <strong>Heard:</strong> {transcript || <em>…</em>}
       </div>
       <div style={{
         background: '#101b33',
-        padding: 10,
-        borderRadius: 10,
-        minHeight: 56,
-        color: '#F4E5B1'
+        padding: 8,
+        borderRadius: 8,
+        minHeight: 38,
+        maxHeight: 80,
+        overflowY: 'auto',
+        color: '#F4E5B1',
+        fontSize: 12
       }}>
-        <strong>Reply:</strong> {reply || <em>Ready. Press ` or click Start Voice.</em>}
+        <strong>Reply:</strong> {reply || <em>Ready. Press ` to start.</em>}
       </div>
     </div>
   )
