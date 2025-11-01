@@ -90,9 +90,10 @@ ${lagging.map(p => `- ${p.name} (${p.progress}%) - Needs attention`).join('\n')}
  * @param {Array} projects - Projects array
  * @param {Array} roadmap - Roadmap tasks array
  * @param {Object} metrics - Optional metrics data
+ * @param {Object} htmlKPIs - Optional HTML report KPIs from feasibility studies
  * @returns {Object} Structured context for AI processing
  */
-export function preparePrompt(projects = [], roadmap = [], metrics = null) {
+export function preparePrompt(projects = [], roadmap = [], metrics = null, htmlKPIs = null) {
   try {
     const timestamp = new Date().toISOString()
     const summary = summarizeProjects(projects)
@@ -127,12 +128,30 @@ export function preparePrompt(projects = [], roadmap = [], metrics = null) {
           avgProgress: (projects.reduce((sum, p) => sum + (p.progress || 0), 0) / projects.length).toFixed(1),
           totalTasks: roadmap.length,
           completedTasks: roadmap.filter(t => t.status === 'done').length
-        }
+        },
+        investorKPIs: htmlKPIs
       },
       analysis: {
         projectSummary: summary,
         roadmapInsights: roadmapAnalysis
       }
+    }
+    
+    // Build investor KPI summary if available
+    let kpiSummary = ''
+    if (htmlKPIs) {
+      kpiSummary = '\n\n📊 INVESTOR INTELLIGENCE (From Feasibility Studies):\n'
+      Object.entries(htmlKPIs).forEach(([filename, kpis]) => {
+        if (kpis.status !== 'not_found') {
+          kpiSummary += `\n${kpis.projectName}:\n`
+          if (kpis.irr) kpiSummary += `  - IRR: ${kpis.irr}%\n`
+          if (kpis.totalInvestment) kpiSummary += `  - Total Investment: $${kpis.totalInvestment}M\n`
+          if (kpis.revenue) kpiSummary += `  - Revenue: $${kpis.revenue}M\n`
+          if (kpis.ebitda) kpiSummary += `  - EBITDA: $${kpis.ebitda}M\n`
+          if (kpis.cagr) kpiSummary += `  - CAGR: ${kpis.cagr}%\n`
+          if (kpis.npv) kpiSummary += `  - NPV: $${kpis.npv}M\n`
+        }
+      })
     }
     
     // Legacy text prompt for display/logging
@@ -144,7 +163,7 @@ Generated: ${timestamp}
 
 ${summary}
 
-${roadmapAnalysis}
+${roadmapAnalysis}${kpiSummary}
 
 📍 STRATEGIC ANALYSIS INSTRUCTIONS:
 -----------------------------------

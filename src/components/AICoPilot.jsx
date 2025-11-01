@@ -1,6 +1,6 @@
 // src/components/AICoPilot.jsx
 import React, { useState, useEffect } from 'react';
-import { askGemini } from '../ai/gemini';
+import { fetchGeminiAnalysis, testGeminiConnection } from '../api/geminiClient';
 import { preparePrompt } from '../ai/autoAgent.browser';
 import { saveRoadmapTask } from '../ai/persist';
 import { useProjects, useRoadmap } from '../utils/useData';
@@ -11,44 +11,69 @@ export default function AICoPilot() {
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [lastRun, setLastRun] = useState(null);
+  const [autoAnalyze, setAutoAnalyze] = useState(() => {
+    return localStorage.getItem('ahk-auto-analyze') === 'true';
+  });
+  const [investorKPIs, setInvestorKPIs] = useState(null);
   const projects = useProjects();
   const roadmap = useRoadmap();
 
   async function runAnalysis() {
     setLoading(true);
     try {
-      const context = preparePrompt(projects, roadmap, metricsData);
-      
-      // Try Gemini API
+      // Fetch HTML report KPIs
+      let htmlKPIs = null;
       try {
-        const result = await askGemini({
-          projects,
-          roadmap,
-          latestReport: context.text,
-          structured: context.structured
-        });
-        
-        const parsed = parseAIResponse(result.advice || result.message);
-        setAnalysis(parsed);
-        setLastRun(new Date().toISOString());
-        
-        // Save to localStorage
-        localStorage.setItem('ahk-ai-analysis', JSON.stringify({
-          analysis: parsed,
-          timestamp: new Date().toISOString()
-        }));
-      } catch (apiError) {
-        console.warn('Gemini API not configured, using mock analysis');
-        // Fallback to local analysis
-        const mockAnalysis = generateMockAnalysis(context);
-        setAnalysis(mockAnalysis);
-        setLastRun(new Date().toISOString());
+        const kpiResponse = await fetch('/api/parse-html-reports');
+        if (kpiResponse.ok) {
+          const kpiData = await kpiResponse.json();
+          htmlKPIs = kpiData.reports;
+          setInvestorKPIs(htmlKPIs);
+          console.log('📊 HTML KPIs extracted:', htmlKPIs);
+        }
+      } catch (kpiError) {
+        console.warn('Could not fetch HTML KPIs:', kpiError);
       }
+
+      const context = preparePrompt(projects, roadmap, metricsData, htmlKPIs);
+      
+      // Use new Gemini client
+      const analysis = await fetchGeminiAnalysis(context);
+      
+      setAnalysis(analysis);
+      setLastRun(new Date().toISOString());
+      
+      // Save to localStorage
+      localStorage.setItem('ahk-ai-analysis', JSON.stringify({
+        analysis,
+        timestamp: new Date().toISOString(),
+        kpis: htmlKPIs
+      }));
     } catch (error) {
       console.error('Analysis error:', error);
       alert('Failed to run analysis. Check console for details.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function toggleAutoAnalyze() {
+    const newValue = !autoAnalyze;
+    setAutoAnalyze(newValue);
+    localStorage.setItem('ahk-auto-analyze', String(newValue));
+    
+    if (newValue) {
+      // Test Gemini connection
+      const testResult = await testGeminiConnection();
+      if (testResult.success) {
+        alert('✅ Auto-Analyze Enabled!\n\nAI analysis will run every 24 hours.\n' + testResult.message);
+        // Schedule first run
+        runAnalysis();
+      } else {
+        alert('⚠️ Auto-Analyze Enabled (Mock Mode)\n\n' + testResult.message + '\n\nSystem will use mock analysis until API key is configured.');
+      }
+    } else {
+      alert('⏸️ Auto-Analyze Disabled.');
     }
   }
 
@@ -60,6 +85,7 @@ export default function AICoPilot() {
         const data = JSON.parse(saved);
         setAnalysis(data.analysis);
         setLastRun(data.timestamp);
+        setInvestorKPIs(data.kpis || null);
       } catch (e) {
         console.error('Failed to load saved analysis:', e);
       }
@@ -72,55 +98,38 @@ export default function AICoPilot() {
     }
     window.addEventListener('runCoPilotAnalysis', handleVoiceCommand);
 
+    // Auto-analyze scheduler (24 hours)
+    if (autoAnalyze) {
+      const lastRunTime = lastRun ? new Date(lastRun).getTime() : 0;
+      const now = Date.now();
+      const hoursSinceLastRun = (now - lastRunTime) / (1000 * 60 * 60);
+      
+      if (hoursSinceLastRun >= 24) {
+        console.log('🤖 Auto-analyze triggered (24h elapsed)');
+        runAnalysis();
+      }
+      
+      // Set up interval check (every hour)
+      const intervalId = setInterval(() => {
+        const lastTime = lastRun ? new Date(lastRun).getTime() : 0;
+        const hoursElapsed = (Date.now() - lastTime) / (1000 * 60 * 60);
+        if (hoursElapsed >= 24) {
+          console.log('🤖 Auto-analyze triggered (scheduled)');
+          runAnalysis();
+        }
+      }, 60 * 60 * 1000); // Check every hour
+
+      return () => {
+        clearInterval(intervalId);
+        window.removeEventListener('runCoPilotAnalysis', handleVoiceCommand);
+      };
+    }
+
     return () => {
       window.removeEventListener('runCoPilotAnalysis', handleVoiceCommand);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  function parseAIResponse(text) {
-    // Simple parser for AI response structure
-    return {
-      investorBrief: extractSection(text, 'Investor Brief') || 
-        'Portfolio shows strong momentum with 3 active projects averaging 52% completion.',
-      nextActions: [
-        'Complete T-0001: DVM base consolidation by Dec 5',
-        'Review WOW e-Scooter supply chain SLA',
-        'Prepare Q-VAN investor alignment deck'
-      ],
-      riskMap: {
-        high: ['2 overdue tasks requiring immediate attention'],
-        medium: ['Budget allocation review needed for Q2'],
-        low: ['Minor documentation updates pending']
-      }
-    };
-  }
-
-  function generateMockAnalysis(context) {
-    const overdue = roadmap.filter(t => 
-      t.status !== 'done' && t.due && new Date(t.due) < new Date()
-    );
-    
-    return {
-      investorBrief: `Portfolio health: ${projects.length} active projects with ${context.structured.data.metrics.avgProgress}% average progress. ${overdue.length} tasks overdue. Strong momentum in localization track.`,
-      nextActions: [
-        roadmap.find(t => t.status === 'in-progress')?.title || 'Review project priorities',
-        'Address overdue tasks in roadmap',
-        'Update investor deck with Q4 metrics'
-      ],
-      riskMap: {
-        high: overdue.length > 0 ? [`${overdue.length} overdue tasks`] : [],
-        medium: projects.filter(p => p.progress < 30).map(p => `${p.name} lagging at ${p.progress}%`),
-        low: ['Routine documentation updates']
-      }
-    };
-  }
-
-  function extractSection(text, sectionName) {
-    const regex = new RegExp(`${sectionName}[:\\s]*([^\\n]+(?:\\n(?!\\*\\*)[^\\n]+)*)`, 'i');
-    const match = text.match(regex);
-    return match ? match[1].trim() : null;
-  }
+  }, [autoAnalyze]);
 
   async function addToRoadmap(title) {
     try {
@@ -230,6 +239,76 @@ export default function AICoPilot() {
               opacity: 0.7
             }}>
               Last run: {new Date(lastRun).toLocaleString()}
+            </div>
+          )}
+
+          {/* Auto-Analyze Toggle */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '8px 12px',
+            background: autoAnalyze ? '#1e3a8a' : '#1e1b4b',
+            borderRadius: 8,
+            marginBottom: 14,
+            border: autoAnalyze ? '1px solid #3b82f6' : '1px solid #4c1d95'
+          }}>
+            <div style={{ fontSize: 12, color: '#e0e7ff' }}>
+              ⏰ Auto-Analyze (24h)
+            </div>
+            <button
+              onClick={toggleAutoAnalyze}
+              style={{
+                background: autoAnalyze ? '#10b981' : '#6b7280',
+                color: '#fff',
+                border: 'none',
+                padding: '4px 12px',
+                borderRadius: 6,
+                cursor: 'pointer',
+                fontSize: 11,
+                fontWeight: 'bold'
+              }}
+            >
+              {autoAnalyze ? 'ON' : 'OFF'}
+            </button>
+          </div>
+
+          {/* Investor Intelligence Section */}
+          {investorKPIs && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{
+                fontSize: 13,
+                fontWeight: 'bold',
+                color: '#a78bfa',
+                marginBottom: 6
+              }}>
+                💎 Investor Intelligence
+              </div>
+              <div style={{
+                background: '#1e1b4b',
+                padding: 10,
+                borderRadius: 8,
+                fontSize: 11
+              }}>
+                {Object.entries(investorKPIs).map(([filename, kpis]) => {
+                  if (kpis.status === 'not_found') return null;
+                  return (
+                    <div key={filename} style={{ marginBottom: 8 }}>
+                      <div style={{ color: '#c7d2fe', fontWeight: 'bold', marginBottom: 4 }}>
+                        {kpis.projectName}
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, color: '#a5b4fc' }}>
+                        {kpis.irr && <div>IRR: {kpis.irr}%</div>}
+                        {kpis.totalInvestment && <div>Investment: ${kpis.totalInvestment}M</div>}
+                        {kpis.revenue && <div>Revenue: ${kpis.revenue}M</div>}
+                        {kpis.ebitda && <div>EBITDA: ${kpis.ebitda}M</div>}
+                        {kpis.cagr && <div>CAGR: {kpis.cagr}%</div>}
+                        {kpis.npv && <div>NPV: ${kpis.npv}M</div>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
 
