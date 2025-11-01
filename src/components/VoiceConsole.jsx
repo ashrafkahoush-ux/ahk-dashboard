@@ -104,6 +104,17 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   async function handleCommand(raw) {
     const cmd = raw.toLowerCase()
 
+    // STOP TALKING (highest priority - check first!)
+    // English: stop, quiet, silence, shut up, enough
+    // Arabic: قف، اسكت، كفى، خلاص
+    if (cmd.includes('stop') || cmd.includes('quiet') || cmd.includes('silence') || 
+        cmd.includes('shut up') || cmd.includes('enough') ||
+        cmd.includes('قف') || cmd.includes('اسكت') || cmd.includes('كفى') || cmd.includes('خلاص')) {
+      window.speechSynthesis.cancel() // Stop all speech immediately
+      setReply('')
+      return // Don't say anything, just stop!
+    }
+
     // NAVIGATION
     if (cmd.includes('open dashboard')) {
       onNavigate?.('/dashboard')
@@ -255,11 +266,11 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
 
     // HELP
     if (cmd.includes('help') || cmd.includes('what can you do')) {
-      return say('You can say: run copilot, investor brief, show next actions, risk report, run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, ask Gemini.')
+      return say('You can say: stop to silence me, run copilot, investor brief, show next actions, risk report, run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, or ask Gemini.')
     }
 
     // FALLBACK
-    say('Command not recognized. Try: run copilot, investor brief, show next actions, or say help for more options.')
+    say('Command not recognized. Try: run copilot, investor brief, show next actions, or say stop to silence me. Say help for more options.')
   }
 
   function start() {
@@ -267,8 +278,10 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   }
 
   function stop() {
+    window.speechSynthesis.cancel() // Stop all speech
     agentRef.current?.stop()
     setStatus('idle')
+    setReply('')
   }
 
   return (

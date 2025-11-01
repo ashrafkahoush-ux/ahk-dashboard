@@ -1,9 +1,10 @@
 // src/api/geminiClient.js
 /**
- * Gemini 2.5 Pro API Client
+ * Gemini API Client
  * Handles authentication, request/response, retry logic, and fallback
  */
 
+// Use Google AI Studio API with Gemini 2.0
 const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent';
 const REQUEST_TIMEOUT = 30000; // 30 seconds
 const MAX_RETRIES = 3;
@@ -75,7 +76,15 @@ export async function fetchGeminiAnalysis(context, options = {}) {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Gemini API error ${response.status}: ${errorText}`);
+        console.error('❌ Gemini API Error:', errorText);
+        
+        if (response.status === 403) {
+          throw new Error('API Error 403: The Generative Language API is not enabled for your project. Enable it at: https://console.cloud.google.com/apis/library/generativelanguage.googleapis.com');
+        } else if (response.status === 401) {
+          throw new Error('API Error 401: Invalid API key. Check VITE_GEMINI_API_KEY in .env');
+        } else {
+          throw new Error(`Gemini API error ${response.status}: ${errorText.substring(0, 200)}`);
+        }
       }
 
       const data = await response.json();
@@ -277,6 +286,10 @@ export async function testGeminiConnection() {
     };
   }
 
+  console.log('🔑 Testing Gemini API connection...');
+  console.log('📍 Endpoint:', GEMINI_API_ENDPOINT);
+  console.log('🔐 API Key:', `${apiKey.substring(0, 20)}...${apiKey.substring(apiKey.length - 4)}`);
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -294,18 +307,37 @@ export async function testGeminiConnection() {
 
     clearTimeout(timeoutId);
 
+    console.log('📡 Response status:', response.status, response.statusText);
+
     if (response.ok) {
+      console.log('✅ Gemini API connected successfully');
       return {
         success: true,
         message: '✅ Gemini API connected successfully'
       };
     } else {
-      return {
-        success: false,
-        message: `API returned status ${response.status}`
-      };
+      const errorText = await response.text();
+      console.error('❌ API Error Response:', errorText);
+      
+      if (response.status === 403) {
+        return {
+          success: false,
+          message: `API Error 403: The Generative Language API is not enabled.\n\nEnable it here:\nhttps://console.cloud.google.com/apis/library/generativelanguage.googleapis.com`
+        };
+      } else if (response.status === 401) {
+        return {
+          success: false,
+          message: `API Error 401: Invalid API key. Check VITE_GEMINI_API_KEY in .env`
+        };
+      } else {
+        return {
+          success: false,
+          message: `API returned status ${response.status}: ${errorText.substring(0, 200)}`
+        };
+      }
     }
   } catch (error) {
+    console.error('❌ Connection test failed:', error);
     return {
       success: false,
       message: error.message

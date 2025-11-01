@@ -37,8 +37,12 @@ export default function AICoPilot() {
 
       const context = preparePrompt(projects, roadmap, metricsData, htmlKPIs);
       
+      console.log('🚀 Starting Gemini analysis...');
+      
       // Use new Gemini client
       const analysis = await fetchGeminiAnalysis(context);
+      
+      console.log('✅ Analysis complete:', analysis);
       
       setAnalysis(analysis);
       setLastRun(new Date().toISOString());
@@ -49,9 +53,24 @@ export default function AICoPilot() {
         timestamp: new Date().toISOString(),
         kpis: htmlKPIs
       }));
+      
+      // Show success message
+      if (analysis.investorBrief) {
+        console.log('💎 Investor Brief:', analysis.investorBrief);
+      }
+      
     } catch (error) {
-      console.error('Analysis error:', error);
-      alert('Failed to run analysis. Check console for details.');
+      console.error('❌ Analysis error:', error);
+      
+      // Show detailed error to user
+      const errorMsg = error.message || 'Unknown error';
+      if (errorMsg.includes('403')) {
+        alert('⚠️ API Error: Permission Denied\n\nThe Generative Language API is not enabled for your project.\n\nPlease visit:\nhttps://console.cloud.google.com/apis/library/generativelanguage.googleapis.com\n\nAnd click ENABLE.\n\nUsing mock analysis for now.');
+      } else if (errorMsg.includes('401')) {
+        alert('⚠️ API Error: Invalid API Key\n\nPlease check your VITE_GEMINI_API_KEY in .env file.\n\nUsing mock analysis for now.');
+      } else {
+        alert(`⚠️ Analysis Error\n\n${errorMsg}\n\nUsing mock analysis. Check console (F12) for details.`);
+      }
     } finally {
       setLoading(false);
     }
