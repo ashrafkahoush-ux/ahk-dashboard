@@ -1,4 +1,16 @@
 // src/ai/voice.js
+import { LANGS, detectLangFromToggle } from './lang';
+
+let currentLang = 'EN';
+
+export function setVoiceLanguage(flag) {
+  currentLang = flag === 'AR' ? 'AR' : 'EN';
+}
+
+export function getVoiceLanguage() {
+  return currentLang;
+}
+
 export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   let rec = null;
@@ -6,7 +18,9 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
 
   function speak(text) {
     try {
+      const lang = detectLangFromToggle(currentLang);
       const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang.tts;
       u.rate = 1.02;
       u.pitch = 1.0;
       window.speechSynthesis.speak(u);
@@ -23,7 +37,8 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
     }
     if (active) return;
     rec = new SpeechRec();
-    rec.lang = 'en-US';
+    const lang = detectLangFromToggle(currentLang);
+    rec.lang = lang.code;
     rec.continuous = true;
     rec.interimResults = true;
     rec.onstart = () => {

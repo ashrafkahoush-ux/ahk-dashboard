@@ -1,6 +1,8 @@
 // src/components/VoiceConsole.jsx
 import React, { useEffect, useState, useRef } from 'react'
-import { createVoiceAgent } from '../ai/voice'
+import { createVoiceAgent, setVoiceLanguage } from '../ai/voice'
+import { PHRASES, matches } from '../ai/lang'
+import { saveRoadmapTask } from '../ai/persist'
 import { askGemini } from '../ai/gemini'
 
 // Lightweight imports from your data
@@ -11,9 +13,16 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   const [status, setStatus] = useState('idle')
   const [transcript, setTranscript] = useState('')
   const [reply, setReply] = useState('')
+  const [lang, setLang] = useState(() => {
+    return localStorage.getItem('voiceLang') || 'EN'
+  })
   const agentRef = useRef(null)
 
   useEffect(() => {
+    // Set language on mount
+    setVoiceLanguage(lang)
+    localStorage.setItem('voiceLang', lang)
+
     agentRef.current = createVoiceAgent({
       onStatus: setStatus,
       onTranscript: setTranscript,
@@ -38,11 +47,25 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
       window.removeEventListener('keydown', onKey)
     }
     // eslint-disable-next-line
-  }, [status])
+  }, [status, lang])
 
   function say(text) {
     setReply(text)
     agentRef.current?.speak(text)
+  }
+
+  function toggleLang() {
+    const newLang = lang === 'EN' ? 'AR' : 'EN'
+    setLang(newLang)
+    setVoiceLanguage(newLang)
+    localStorage.setItem('voiceLang', newLang)
+    // Restart recognition if active
+    if (status === 'listening') {
+      agentRef.current?.stop()
+      setTimeout(() => agentRef.current?.start(), 500)
+    }
+    const msg = newLang === 'AR' ? 'تم التبديل إلى العربية' : 'Switched to English'
+    say(msg)
   }
 
   async function handleCommand(raw) {
@@ -165,24 +188,41 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
       width: 360,
       boxShadow: '0 10px 30px rgba(0,0,0,.4)'
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            onClick={status === 'listening' ? stop : start}
+            style={{
+              background: status === 'listening' ? '#D4AF37' : '#1f2d4a',
+              color: status === 'listening' ? '#0A192F' : '#F4E5B1',
+              border: 'none',
+              padding: '8px 14px',
+              borderRadius: 10,
+              cursor: 'pointer',
+              fontWeight: 'bold'
+            }}
+          >
+            {status === 'listening' ? '● Listening' : '🎙️ Start Voice'}
+          </button>
+          <div style={{ opacity: 0.8, fontSize: 12 }}>
+            Status: {status}
+          </div>
+        </div>
         <button
-          onClick={status === 'listening' ? stop : start}
+          onClick={toggleLang}
           style={{
-            background: status === 'listening' ? '#D4AF37' : '#1f2d4a',
-            color: status === 'listening' ? '#0A192F' : '#F4E5B1',
-            border: 'none',
-            padding: '8px 14px',
-            borderRadius: 10,
+            background: '#1f2d4a',
+            color: '#D4AF37',
+            border: '1px solid #D4AF37',
+            padding: '6px 12px',
+            borderRadius: 8,
             cursor: 'pointer',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            fontSize: 12
           }}
         >
-          {status === 'listening' ? '● Listening' : '🎙️ Start Voice'}
+          [{lang}]
         </button>
-        <div style={{ opacity: 0.8, fontSize: 12 }}>
-          Status: {status}
-        </div>
       </div>
 
       <div style={{
