@@ -336,16 +336,16 @@ export default defineConfig({
       })
 
       // API: Generate Report
-      server.middlewares.use('/api/generate-report', async (req, res) => {
-        try {
-          if (req.method !== 'POST') {
-            res.statusCode = 405
-            return res.end('Method Not Allowed')
-          }
+      server.middlewares.use('/api/generate-report', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          return res.end('Method Not Allowed')
+        }
 
-          let body = ''
-          req.on('data', chunk => body += chunk)
-          req.on('end', () => {
+        let body = ''
+        req.on('data', chunk => body += chunk)
+        req.on('end', () => {
+          try {
             const { format = 'pdf', includeCharts = true, sections = [] } = JSON.parse(body || '{}')
             
             // Generate comprehensive report structure
@@ -392,25 +392,33 @@ export default defineConfig({
             
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ success: true, report }))
-          })
-        } catch (error) {
-          console.error('❌ Report Generation Failed:', error)
+          } catch (error) {
+            console.error('❌ Report Generation Failed:', error)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, message: error.message }))
+          }
+        })
+        
+        req.on('error', (error) => {
+          console.error('❌ Request Error:', error)
           res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
           res.end(JSON.stringify({ success: false, message: error.message }))
-        }
+        })
       })
 
       // API: Run Analysis (Dedicated endpoint for analytics tracking)
-      server.middlewares.use('/api/run-analysis', async (req, res) => {
-        try {
-          if (req.method !== 'POST') {
-            res.statusCode = 405
-            return res.end('Method Not Allowed')
-          }
+      server.middlewares.use('/api/run-analysis', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          return res.end('Method Not Allowed')
+        }
 
-          let body = ''
-          req.on('data', chunk => body += chunk)
-          req.on('end', async () => {
+        let body = ''
+        req.on('data', chunk => body += chunk)
+        req.on('end', () => {
+          try {
             const { analysisType = 'full', trigger = 'manual' } = JSON.parse(body || '{}')
             
             console.log('🤖 AI ANALYSIS TRIGGERED')
@@ -476,12 +484,20 @@ export default defineConfig({
             
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ success: true, results }))
-          })
-        } catch (error) {
-          console.error('❌ Analysis Failed:', error)
+          } catch (error) {
+            console.error('❌ Analysis Failed:', error)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, message: error.message }))
+          }
+        })
+        
+        req.on('error', (error) => {
+          console.error('❌ Request Error:', error)
           res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
           res.end(JSON.stringify({ success: false, message: error.message }))
-        }
+        })
       })
     }
   }
