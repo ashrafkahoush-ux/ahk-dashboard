@@ -9,6 +9,68 @@ export default function Dashboard() {
   const projects = useProjects()
   const roadmap = useRoadmap()
 
+  async function handleGenerateReport() {
+    try {
+      console.log('🚀 Initiating report generation...')
+      
+      const response = await fetch('/api/generate-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          format: 'pdf',
+          includeCharts: true,
+          sections: [
+            'Executive Summary',
+            'Portfolio Overview',
+            'Financial Metrics',
+            'Project Status',
+            'Risk Analysis',
+            'Strategic Recommendations'
+          ]
+        })
+      })
+      
+      const result = await response.json()
+      
+      if (result.success) {
+        console.log('✅ Report generation successful:', result)
+        alert(`📊 Report Generated!\n\nFilename: ${result.filename}\nSize: ${result.size}\nSections: ${result.sections.length}\n\n${result.message}`)
+      } else {
+        console.error('❌ Report generation failed:', result)
+        alert('❌ Failed to generate report. Check console for details.')
+      }
+    } catch (error) {
+      console.error('❌ Report generation error:', error)
+      alert('❌ Error generating report. Check console for details.')
+    }
+  }
+
+  async function handleRunAnalysis() {
+    try {
+      console.log('🤖 Initiating AI analysis...')
+      
+      // Log to API first
+      const response = await fetch('/api/run-analysis', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          analysisType: 'full',
+          trigger: 'dashboard-button'
+        })
+      })
+      
+      const result = await response.json()
+      console.log('✅ Analysis logged:', result)
+      
+      // Then trigger the actual AI Co-Pilot analysis
+      window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))
+    } catch (error) {
+      console.error('❌ Analysis trigger error:', error)
+      // Still dispatch event even if logging fails
+      window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))
+    }
+  }
+
   return (
     <div className="space-y-6 page-transition">
       {/* Page Header */}
@@ -21,7 +83,10 @@ export default function Dashboard() {
             Your command center for AHK Strategies growth
           </p>
         </div>
-        <button className="btn-primary">
+        <button 
+          onClick={handleGenerateReport}
+          className="btn-primary"
+        >
           Generate Report
         </button>
       </div>
@@ -119,7 +184,7 @@ export default function Dashboard() {
             <span className="font-semibold text-ahk-navy-900">Update Roadmap</span>
           </button>
           <button 
-            onClick={() => window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))}
+            onClick={handleRunAnalysis}
             data-run-ai-analysis
             className="flex items-center space-x-3 p-4 border-2 border-ahk-slate-200 rounded-lg hover:border-ahk-gold-500 hover:bg-ahk-slate-50 transition-all cursor-pointer"
           >

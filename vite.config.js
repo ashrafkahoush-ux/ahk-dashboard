@@ -334,6 +334,95 @@ export default defineConfig({
           res.end(JSON.stringify({ error: 'Internal server error' }))
         }
       })
+
+      // API: Generate Report
+      server.middlewares.use('/api/generate-report', async (req, res) => {
+        try {
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            return res.end('Method Not Allowed')
+          }
+
+          let body = ''
+          req.on('data', chunk => body += chunk)
+          req.on('end', () => {
+            const { format = 'pdf', includeCharts = true, sections = [] } = JSON.parse(body || '{}')
+            
+            console.log('📊 GENERATE REPORT TRIGGERED')
+            console.log(`   Format: ${format}`)
+            console.log(`   Include Charts: ${includeCharts}`)
+            console.log(`   Sections: ${sections.join(', ') || 'All'}`)
+            console.log(`   Timestamp: ${new Date().toISOString()}`)
+            
+            // Simulate report generation
+            setTimeout(() => {
+              const mockResponse = {
+                success: true,
+                reportId: `RPT-${Date.now()}`,
+                format,
+                filename: `AHK-Strategic-Report-${new Date().toISOString().split('T')[0]}.${format}`,
+                size: '2.4 MB',
+                sections: sections.length > 0 ? sections : [
+                  'Executive Summary',
+                  'Portfolio Overview',
+                  'Financial Metrics',
+                  'Project Status',
+                  'Risk Analysis',
+                  'Strategic Recommendations'
+                ],
+                generatedAt: new Date().toISOString(),
+                downloadUrl: '/api/download-report',
+                message: '✅ Report generated successfully'
+              }
+              
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify(mockResponse))
+            }, 1500) // Simulate generation time
+          })
+        } catch (error) {
+          console.error('❌ Report generation error:', error)
+          res.statusCode = 500
+          res.end(JSON.stringify({ success: false, error: error.message }))
+        }
+      })
+
+      // API: Run Analysis (Dedicated endpoint for analytics tracking)
+      server.middlewares.use('/api/run-analysis', async (req, res) => {
+        try {
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            return res.end('Method Not Allowed')
+          }
+
+          let body = ''
+          req.on('data', chunk => body += chunk)
+          req.on('end', () => {
+            const { analysisType = 'full', trigger = 'manual' } = JSON.parse(body || '{}')
+            
+            console.log('🤖 AI ANALYSIS TRIGGERED')
+            console.log(`   Analysis Type: ${analysisType}`)
+            console.log(`   Trigger: ${trigger}`)
+            console.log(`   Timestamp: ${new Date().toISOString()}`)
+            
+            const mockResponse = {
+              success: true,
+              analysisId: `ANA-${Date.now()}`,
+              type: analysisType,
+              status: 'initiated',
+              estimatedTime: '15-30 seconds',
+              message: '✅ AI Analysis started successfully',
+              timestamp: new Date().toISOString()
+            }
+            
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(mockResponse))
+          })
+        } catch (error) {
+          console.error('❌ Analysis trigger error:', error)
+          res.statusCode = 500
+          res.end(JSON.stringify({ success: false, error: error.message }))
+        }
+      })
     }
   }
 })
