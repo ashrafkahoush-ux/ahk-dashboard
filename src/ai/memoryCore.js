@@ -271,7 +271,7 @@ export function generateRuleBasedResponse(message, context = {}) {
 
   // Rule #7: Adapt to Ash's energy (add preferred name)
   if (Math.random() > 0.5 && !enhancedMessage.includes(preferredName)) {
-    enhancedMessage = `${preferredName}, ${enhancedMessage}`;
+    enhancedMessage = preferredName + ', ' + enhancedMessage;
   }
 
   return enhancedMessage;
