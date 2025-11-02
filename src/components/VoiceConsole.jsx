@@ -4,6 +4,7 @@ import { createVoiceAgent, setVoiceLanguage } from '../ai/voice'
 import { PHRASES, matches } from '../ai/lang'
 import { saveRoadmapTask } from '../ai/persist'
 import { askGemini } from '../ai/gemini'
+import { mapIntent, getConfidence } from '../ai/intentMapper'
 
 // Lightweight imports from your data
 import projectsData from '../data/projects.json'
@@ -102,217 +103,197 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   }
 
   async function handleCommand(raw) {
-    const cmd = raw.toLowerCase()
+    // 🧠 Map natural language to intent
+    const intent = mapIntent(raw);
+    const confidence = getConfidence(raw, intent);
+    
+    console.log(`🎯 Intent: ${intent} (${confidence}% confidence) - Command: "${raw}"`);
 
     // STOP TALKING (highest priority - check first!)
     // English: stop, quiet, silence, shut up, enough
     // Arabic: قف، اسكت، كفى، خلاص
-    if (cmd.includes('stop') || cmd.includes('quiet') || cmd.includes('silence') || 
-        cmd.includes('shut up') || cmd.includes('enough') ||
+    const cmd = raw.toLowerCase();
+    if (intent === 'stop' || 
         cmd.includes('قف') || cmd.includes('اسكت') || cmd.includes('كفى') || cmd.includes('خلاص')) {
-      window.speechSynthesis.cancel() // Stop all speech immediately
-      agentRef.current?.stop() // Stop voice recognition too!
-      setReply('')
-      setStatus('idle')
-      setTimeout(() => setExpanded(false), 1500) // Close bubble after 1.5s
-      return // Don't say anything, just stop!
+      window.speechSynthesis.cancel(); // Stop all speech immediately
+      agentRef.current?.stop(); // Stop voice recognition too!
+      setReply('');
+      setStatus('idle');
+      setTimeout(() => setExpanded(false), 1500); // Close bubble after 1.5s
+      return; // Don't say anything, just stop!
     }
-
-    // NAVIGATION
-    if (cmd.includes('open dashboard')) {
-      onNavigate?.('/dashboard')
-      return say('Opening dashboard.')
+    
+    // If no intent matched, try fallback
+    if (!intent) {
+      return handleFallback(raw);
     }
-    if (cmd.includes('open strategy') || cmd.includes('show roadmap')) {
-      onNavigate?.('/strategy')
-      return say('Showing strategy and roadmap.')
-    }
-    if (cmd.includes('open partnerships')) {
-      onNavigate?.('/partnerships')
-      return say('Opening partnerships.')
-    }
-    if (cmd.includes('open marketing')) {
-      onNavigate?.('/marketing')
-      return say('Opening marketing pulse.')
-    }
-    if (cmd.includes('open assets') || cmd.includes('asset vault')) {
-      onNavigate?.('/assets')
-      return say('Opening asset vault.')
-    }
-
-    // AI CO-PILOT COMMANDS
-    if (cmd.includes('run copilot') || cmd.includes('co-pilot analysis')) {
-      // Trigger Co-Pilot analysis by dispatching custom event
-      window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))
-      return say('Running Co-Pilot analysis. Check the floating robot button for strategic insights.')
-    }
-
-    if (cmd.includes('investor brief') || cmd.includes('give me investor summary')) {
-      const context = window.__LAST_AI_CONTEXT__
-      if (!context?.analysis?.projectSummary) {
-        return say('No analysis available yet. Please run Co-Pilot analysis first.')
-      }
-      // Read brief from stored analysis
-      const saved = localStorage.getItem('ahk-ai-analysis')
-      if (saved) {
-        try {
-          const data = JSON.parse(saved)
-          if (data.analysis?.investorBrief) {
-            return say(data.analysis.investorBrief)
+    
+    // Execute intent-based commands
+    return executeIntent(intent, raw);
+  }
+  
+  async function executeIntent(intent, rawCommand) {
+    switch (intent) {
+      // Navigation
+      case 'openDashboard':
+        onNavigate?.('/dashboard');
+        return say('Opening dashboard. Your command center awaits.');
+        
+      case 'openStrategy':
+        onNavigate?.('/strategy');
+        return say('Showing strategy and roadmap. Let\'s plan the future.');
+        
+      case 'openMarketing':
+        onNavigate?.('/marketing');
+        return say('Opening marketing pulse. Let\'s see the market insights.');
+        
+      case 'openAssets':
+        onNavigate?.('/assets');
+        return say('Opening asset vault. Your secure documents are ready.');
+        
+      case 'openPartnerships':
+        onNavigate?.('/partnerships');
+        return say('Opening partnerships. Let\'s review our network.');
+        
+      // AI Analysis
+      case 'runAnalysis':
+        window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'));
+        return say('Got it! Launching AI Co-Pilot analysis now. Gemini is analyzing your strategic data.');
+        
+      case 'runFusion':
+        window.dispatchEvent(new CustomEvent('runFusionAnalysis'));
+        return say('Initiating Multi-AI Fusion Analysis. Gemini, Grok, and ChatGPT are collaborating on your intelligence report.');
+        
+      case 'showFusion':
+        const fusionData = localStorage.getItem('ahk-fusion-analysis');
+        if (fusionData) {
+          try {
+            const data = JSON.parse(fusionData);
+            if (data.fusion) {
+              const { consensus_score, sources_used, summary } = data.fusion;
+              return say(`Fusion Report ready. Consensus score is ${consensus_score} percent from ${sources_used.length} AI sources. ${summary.substring(0, 200)}`);
+            }
+          } catch (e) {
+            console.error('Failed to read fusion report:', e);
           }
-        } catch (e) {
-          console.error('Failed to read stored analysis:', e)
         }
-      }
-      return say('Run Co-Pilot analysis to generate investor brief.')
-    }
-
-    if (cmd.includes('show next actions') || cmd.includes('what should i do next')) {
-      const saved = localStorage.getItem('ahk-ai-analysis')
-      if (saved) {
-        try {
-          const data = JSON.parse(saved)
-          if (data.analysis?.nextActions) {
-            const actions = data.analysis.nextActions.slice(0, 3).join('. Next, ')
-            return say(`Here are your top 3 actions: ${actions}`)
+        return say('No fusion report available yet. Run fusion analysis first to generate a multi-AI consensus report.');
+        
+      // Investor & Portfolio
+      case 'investorBrief':
+        const savedAnalysis = localStorage.getItem('ahk-ai-analysis');
+        if (savedAnalysis) {
+          try {
+            const data = JSON.parse(savedAnalysis);
+            if (data.analysis?.investorBrief) {
+              return say(`Here's your investor brief: ${data.analysis.investorBrief}`);
+            }
+          } catch (e) {
+            console.error('Failed to read stored analysis:', e);
           }
-        } catch (e) {
-          console.error('Failed to read stored analysis:', e)
         }
-      }
-      return say('Run Co-Pilot analysis to see recommended actions.')
-    }
-
-    if (cmd.includes('risk report') || cmd.includes('what are the risks')) {
-      const saved = localStorage.getItem('ahk-ai-analysis')
-      if (saved) {
-        try {
-          const data = JSON.parse(saved)
-          if (data.analysis?.riskMap) {
-            const { high, medium, low } = data.analysis.riskMap
-            const highCount = high?.length || 0
-            const medCount = medium?.length || 0
-            const lowCount = low?.length || 0
-            return say(`Risk report: ${highCount} high priority risks, ${medCount} medium, ${lowCount} low. Check Co-Pilot panel for details.`)
+        return say('No investor brief available yet. Run Co-Pilot analysis to generate strategic insights for investors.');
+        
+      // Actions & Tasks
+      case 'nextActions':
+        const actionsData = localStorage.getItem('ahk-ai-analysis');
+        if (actionsData) {
+          try {
+            const data = JSON.parse(actionsData);
+            if (data.analysis?.nextActions) {
+              const actions = data.analysis.nextActions.slice(0, 3).join('. Next, ');
+              return say(`Here are your top 3 priority actions: ${actions}`);
+            }
+          } catch (e) {
+            console.error('Failed to read actions:', e);
           }
-        } catch (e) {
-          console.error('Failed to read stored analysis:', e)
         }
-      }
-      return say('Run Co-Pilot analysis to generate risk map.')
-    }
-
-    // FUSION ANALYSIS
-    if (cmd.includes('run fusion') || cmd.includes('fusion analysis') || cmd.includes('multi ai')) {
-      // Trigger Fusion Analysis by dispatching custom event
-      window.dispatchEvent(new CustomEvent('runFusionAnalysis'))
-      return say('Running Multi-A-I Fusion Analysis. Gemini, Grok, and ChatGPT are now collaborating on your strategic intelligence.')
-    }
-
-    if (cmd.includes('show fusion') || cmd.includes('fusion report') || cmd.includes('consensus score')) {
-      const saved = localStorage.getItem('ahk-fusion-analysis')
-      if (saved) {
-        try {
-          const data = JSON.parse(saved)
-          if (data.fusion) {
-            const { consensus_score, sources_used, summary } = data.fusion
-            return say(`Fusion Report: Consensus score is ${consensus_score} percent. Sources used: ${sources_used.join(', ')}. ${summary.substring(0, 200)}`)
+        return say('No actions available yet. Run Co-Pilot analysis to get AI-recommended next steps.');
+        
+      case 'overdueReview':
+        const today = new Date();
+        const overdue = roadmapData.filter(t => 
+          t.status !== 'done' && 
+          t.due && 
+          new Date(t.due) < today
+        );
+        if (overdue.length === 0) {
+          return say('Great news! No overdue tasks. You\'re on schedule.');
+        }
+        return say(`You have ${overdue.length} overdue task${overdue.length > 1 ? 's' : ''}. Check the strategy page for details.`);
+        
+      // Risk & Alerts
+      case 'riskReport':
+        const riskData = localStorage.getItem('ahk-ai-analysis');
+        if (riskData) {
+          try {
+            const data = JSON.parse(riskData);
+            if (data.analysis?.riskMap) {
+              const { high, medium, low } = data.analysis.riskMap;
+              const highCount = high?.length || 0;
+              const medCount = medium?.length || 0;
+              const lowCount = low?.length || 0;
+              return say(`Risk assessment complete: ${highCount} high priority risks, ${medCount} medium priority, and ${lowCount} low priority. Review the Co-Pilot panel for detailed mitigation strategies.`);
+            }
+          } catch (e) {
+            console.error('Failed to read risk map:', e);
           }
-        } catch (e) {
-          console.error('Failed to read fusion report:', e)
         }
-      }
-      return say('Run Fusion Analysis first to generate multi-A-I consensus report.')
+        return say('No risk assessment available yet. Run Co-Pilot analysis to generate a comprehensive risk map.');
+        
+      // Project Info
+      case 'projectSummary':
+        const activeCount = projectsData.filter(p => p.status === 'active').length;
+        const plannedCount = projectsData.filter(p => p.status === 'planned').length;
+        return say(`Portfolio summary: ${activeCount} active projects, ${plannedCount} in planning phase. Total strategic value across all initiatives.`);
+        
+      // Settings
+      case 'enableAutoSync':
+        onToggleAutoSync?.(true);
+        return say('Auto-sync activated. I will run analysis every 24 hours automatically.');
+        
+      case 'disableAutoSync':
+        onToggleAutoSync?.(false);
+        return say('Auto-sync disabled. Manual analysis only.');
+        
+      // Theme
+      case 'darkMode':
+        window.dispatchEvent(new CustomEvent('setDarkMode'));
+        return say('Activating dark mode. Welcome to the cosmic dashboard experience.');
+        
+      case 'lightMode':
+        window.dispatchEvent(new CustomEvent('setLightMode'));
+        return say('Activating light mode. Switching to clean professional view.');
+        
+      case 'toggleTheme':
+        window.dispatchEvent(new CustomEvent('toggleTheme'));
+        return say('Theme toggled.');
+        
+      // Help
+      case 'help':
+        return say('I understand natural commands like: run analysis, show me the fusion report, what should I do next, any risks, open dashboard, dark mode, and much more. Just speak naturally and I\'ll understand.');
+        
+      default:
+        return handleFallback(rawCommand);
     }
-
-    // THEME TOGGLE
-    if (cmd.includes('dark mode') || cmd.includes('enable dark') || cmd.includes('turn on dark')) {
-      window.dispatchEvent(new CustomEvent('setDarkMode'))
-      return say('Activating dark mode. Welcome to the cosmic dashboard.')
-    }
-
-    if (cmd.includes('light mode') || cmd.includes('enable light') || cmd.includes('turn on light')) {
-      window.dispatchEvent(new CustomEvent('setLightMode'))
-      return say('Activating light mode. Switching to clean professional view.')
-    }
-
-    if (cmd.includes('toggle theme') || cmd.includes('switch theme') || cmd.includes('change theme')) {
-      window.dispatchEvent(new CustomEvent('toggleTheme'))
-      return say('Toggling theme mode.')
-    }
-
-    // ANALYSIS
-    if (cmd.includes('run analysis') || cmd.includes('ai analysis')) {
-      await onRunAnalysis?.()
-      return say('AI analysis executed. Check the dashboard cards and console report.')
-    }
-
-    // AUTOSYNC
-    if (cmd.includes('enable auto') || cmd.includes('turn on auto')) {
-      onToggleAutoSync?.(true)
-      return say('Auto-sync enabled. I will run analysis daily.')
-    }
-    if (cmd.includes('disable auto') || cmd.includes('turn off auto')) {
-      onToggleAutoSync?.(false)
-      return say('Auto-sync disabled.')
-    }
-
-    // OVERDUE / SUMMARY
-    if (cmd.includes('what is overdue') || cmd.includes('overdue tasks')) {
-      const today = new Date()
-      const overdue = roadmapData.filter(t => 
-        t.status !== 'done' && 
-        t.due && 
-        new Date(t.due) < today
-      )
-      if (!overdue.length) return say('No overdue tasks. Marvelous.')
-      const top = overdue.slice(0, 3).map(t => t.title).join('; ')
-      return say(`Overdue: ${top}${overdue.length > 3 ? ' and more' : ''}.`)
-    }
-
-    // PROJECT SUMMARY
-    if (cmd.includes('project summary') || cmd.includes('how are projects')) {
-      const total = projectsData.length
-      const avgProgress = (projectsData.reduce((sum, p) => sum + (p.progress || 0), 0) / total).toFixed(0)
-      const leading = projectsData.filter(p => p.progress > 60)
-      return say(`We have ${total} active projects with average progress of ${avgProgress} percent. ${leading.length} projects are leading above 60 percent.`)
-    }
-
-    // MARK COMPLETE (simple heuristic: "mark <id> done" or "complete T003")
-    if (cmd.includes('mark') && (cmd.includes('complete') || cmd.includes('done'))) {
-      const id = (cmd.match(/t[-\s]?\d{3,4}/i) || [])[0]
-      if (!id) return say('Please specify a task ID like T dash zero zero three.')
-      return say(`I will mark ${id.toUpperCase()} complete in the interface. Remember to update roadmap dot json for persistence.`)
-    }
-
-    // GEMINI ADVICE
-    if (cmd.includes('ask gemini') || cmd.includes('gemini advice')) {
+  }
+  
+  async function handleFallback(raw) {
+    const cmd = raw.toLowerCase();
+    
+    // Handle open-ended questions by asking Gemini AI
+    if (cmd.includes('gemini') || cmd.includes('ask gemini') || cmd.includes('جيميني')) {
       try {
-        say('Consulting Gemini. Please wait.')
-        const latest = window.__LAST_AI_REPORT__ || 'No local report captured yet.'
-        const structured = window.__LAST_AI_CONTEXT__ || null
-        const ai = await askGemini({ 
-          projects: projectsData, 
-          roadmap: roadmapData, 
-          latestReport: latest,
-          structured 
-        })
-        say('Gemini returned fresh advice. Check the reply box for details.')
-        setReply(ai?.advice || ai?.message || 'No advice field returned.')
-      } catch (e) {
-        console.error('Gemini error:', e)
-        say('Gemini hook not connected yet. Check AI Integration Guide for setup instructions.')
+        const response = await askGemini(cmd);
+        return say(response);
+      } catch (error) {
+        console.error('Gemini error:', error);
+        return say('Sorry, I had trouble reaching Gemini. Please try again.');
       }
-      return
     }
 
-    // HELP
-    if (cmd.includes('help') || cmd.includes('what can you do')) {
-      return say('You can say: stop to silence me, dark mode, light mode, toggle theme, run fusion analysis, show fusion report, run copilot, investor brief, show next actions, risk report, run analysis, what is overdue, project summary, open dashboard, open strategy, open partnerships, enable autosync, or ask Gemini.')
-    }
-
-    // FALLBACK
-    say('Command not recognized. Try: dark mode, light mode, run fusion analysis, run copilot, investor brief, show next actions, or say stop to silence me. Say help for more options.')
+    // FINAL FALLBACK
+    say('I didn\'t quite catch that. Try saying things like: run analysis, show fusion report, what should I do next, any risks, open dashboard, or dark mode. Say "help" to hear all available commands.');
   }
 
   function start() {
