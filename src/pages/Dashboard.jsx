@@ -1,4 +1,5 @@
 import { Target, Rocket, TrendingUp, DollarSign, CheckCircle, Clock } from 'lucide-react'
+import { useState } from 'react'
 import MetricCard from '../components/MetricCard'
 import ProjectCard from '../components/ProjectCard'
 import { useProjects, useRoadmap } from '../utils/useData'
@@ -8,8 +9,17 @@ export default function Dashboard() {
   const { overview, projectHealth, timeline} = metricsData
   const projects = useProjects()
   const roadmap = useRoadmap()
+  
+  // UI feedback state
+  const [reportLoading, setReportLoading] = useState(false)
+  const [analysisLoading, setAnalysisLoading] = useState(false)
+  const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState('success') // 'success' | 'error'
 
   async function handleGenerateReport() {
+    setReportLoading(true)
+    setMessage('')
+    
     try {
       console.log('🚀 Initiating report generation...')
       
@@ -23,33 +33,45 @@ export default function Dashboard() {
             'Executive Summary',
             'Portfolio Overview',
             'Financial Metrics',
-            'Project Status',
+            'Project Progress',
+            'AI Insights',
             'Risk Analysis',
             'Strategic Recommendations'
           ]
         })
       })
       
-      const result = await response.json()
+      const data = await response.json()
       
-      if (result.success) {
-        console.log('✅ Report generation successful:', result)
-        alert(`📊 Report Generated!\n\nFilename: ${result.filename}\nSize: ${result.size}\nSections: ${result.sections.length}\n\n${result.message}`)
+      if (data.success) {
+        console.log('✅ Report generation successful:', data.report)
+        setMessage(`Report ready 🎉 - ${data.report.sections.length} sections, Generated: ${new Date(data.report.generatedAt).toLocaleString()}`)
+        setMessageType('success')
+        
+        // Auto-clear message after 8 seconds
+        setTimeout(() => setMessage(''), 8000)
       } else {
-        console.error('❌ Report generation failed:', result)
-        alert('❌ Failed to generate report. Check console for details.')
+        console.error('❌ Report generation failed:', data)
+        setMessage('Failed to generate report ❌')
+        setMessageType('error')
       }
     } catch (error) {
       console.error('❌ Report generation error:', error)
-      alert('❌ Error generating report. Check console for details.')
+      setMessage('Error generating report. Check console for details.')
+      setMessageType('error')
+    } finally {
+      setReportLoading(false)
     }
   }
 
   async function handleRunAnalysis() {
+    setAnalysisLoading(true)
+    setMessage('')
+    
     try {
       console.log('🤖 Initiating AI analysis...')
       
-      // Log to API first
+      // Log to API and get results
       const response = await fetch('/api/run-analysis', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,20 +81,62 @@ export default function Dashboard() {
         })
       })
       
-      const result = await response.json()
-      console.log('✅ Analysis logged:', result)
+      const data = await response.json()
       
-      // Then trigger the actual AI Co-Pilot analysis
-      window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))
+      if (data.success) {
+        console.log('✅ Analysis complete:', data.results)
+        setMessage(`Analysis complete 🤖 - ${data.results.insights.length} insights, ${data.results.recommendations.length} recommendations`)
+        setMessageType('success')
+        
+        // Then trigger the actual AI Co-Pilot panel
+        window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))
+        
+        // Auto-clear message after 8 seconds
+        setTimeout(() => setMessage(''), 8000)
+      } else {
+        console.error('❌ Analysis failed:', data)
+        setMessage('Analysis failed ❌')
+        setMessageType('error')
+      }
     } catch (error) {
       console.error('❌ Analysis trigger error:', error)
+      setMessage('Error running analysis. Check console for details.')
+      setMessageType('error')
+      
       // Still dispatch event even if logging fails
       window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'))
+    } finally {
+      setAnalysisLoading(false)
     }
   }
 
   return (
     <div className="space-y-6 page-transition">
+      {/* Feedback Message */}
+      {message && (
+        <div 
+          className={`card animate-slide-in ${
+            messageType === 'success' 
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-500' 
+              : 'bg-gradient-to-r from-red-50 to-rose-50 border-2 border-red-500'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <p className={`font-semibold ${
+              messageType === 'success' ? 'text-green-800' : 'text-red-800'
+            }`}>
+              {message}
+            </p>
+            <button 
+              onClick={() => setMessage('')}
+              className="text-gray-500 hover:text-gray-700 text-xl font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -85,9 +149,17 @@ export default function Dashboard() {
         </div>
         <button 
           onClick={handleGenerateReport}
-          className="btn-primary"
+          disabled={reportLoading}
+          className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
         >
-          Generate Report
+          {reportLoading ? (
+            <>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              <span>Generating...</span>
+            </>
+          ) : (
+            <span>Generate Report</span>
+          )}
         </button>
       </div>
 
@@ -185,11 +257,21 @@ export default function Dashboard() {
           </button>
           <button 
             onClick={handleRunAnalysis}
+            disabled={analysisLoading}
             data-run-ai-analysis
-            className="flex items-center space-x-3 p-4 border-2 border-ahk-slate-200 rounded-lg hover:border-ahk-gold-500 hover:bg-ahk-slate-50 transition-all cursor-pointer"
+            className="flex items-center space-x-3 p-4 border-2 border-ahk-slate-200 rounded-lg hover:border-ahk-gold-500 hover:bg-ahk-slate-50 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <TrendingUp className="w-6 h-6 text-ahk-gold-600" />
-            <span className="font-semibold text-ahk-navy-900">Run AI Analysis</span>
+            {analysisLoading ? (
+              <>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-ahk-gold-600"></div>
+                <span className="font-semibold text-ahk-navy-900">Analyzing...</span>
+              </>
+            ) : (
+              <>
+                <TrendingUp className="w-6 h-6 text-ahk-gold-600" />
+                <span className="font-semibold text-ahk-navy-900">Run AI Analysis</span>
+              </>
+            )}
           </button>
           <button className="flex items-center space-x-3 p-4 border-2 border-ahk-slate-200 rounded-lg hover:border-ahk-navy-500 hover:bg-ahk-slate-50 transition-all">
             <Rocket className="w-6 h-6 text-ahk-navy-700" />

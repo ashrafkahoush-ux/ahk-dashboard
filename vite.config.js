@@ -348,41 +348,55 @@ export default defineConfig({
           req.on('end', () => {
             const { format = 'pdf', includeCharts = true, sections = [] } = JSON.parse(body || '{}')
             
-            console.log('📊 GENERATE REPORT TRIGGERED')
-            console.log(`   Format: ${format}`)
-            console.log(`   Include Charts: ${includeCharts}`)
-            console.log(`   Sections: ${sections.join(', ') || 'All'}`)
-            console.log(`   Timestamp: ${new Date().toISOString()}`)
+            // Generate comprehensive report structure
+            const report = {
+              id: Date.now(),
+              title: "AHK Strategies Performance Report",
+              generatedAt: new Date().toISOString(),
+              format,
+              includeCharts,
+              sections: sections.length > 0 ? sections : [
+                "Executive Summary",
+                "Portfolio Overview",
+                "Financial Metrics",
+                "Project Progress",
+                "AI Insights",
+                "Risk Analysis",
+                "Strategic Recommendations"
+              ],
+              metadata: {
+                reportType: 'strategic-dashboard',
+                version: '1.0',
+                pageCount: 24,
+                author: 'AHK Dashboard AI',
+                confidentiality: 'Internal Use Only'
+              },
+              summary: {
+                totalProjects: 3,
+                activeProjects: 3,
+                completionRate: '67%',
+                totalBudget: '$2.8M',
+                projectedROI: '245%',
+                riskLevel: 'Medium'
+              },
+              downloadUrl: `/api/download-report/${Date.now()}`,
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+            }
             
-            // Simulate report generation
-            setTimeout(() => {
-              const mockResponse = {
-                success: true,
-                reportId: `RPT-${Date.now()}`,
-                format,
-                filename: `AHK-Strategic-Report-${new Date().toISOString().split('T')[0]}.${format}`,
-                size: '2.4 MB',
-                sections: sections.length > 0 ? sections : [
-                  'Executive Summary',
-                  'Portfolio Overview',
-                  'Financial Metrics',
-                  'Project Status',
-                  'Risk Analysis',
-                  'Strategic Recommendations'
-                ],
-                generatedAt: new Date().toISOString(),
-                downloadUrl: '/api/download-report',
-                message: '✅ Report generated successfully'
-              }
-              
-              res.setHeader('Content-Type', 'application/json')
-              res.end(JSON.stringify(mockResponse))
-            }, 1500) // Simulate generation time
+            console.log('📊 REPORT GENERATED')
+            console.log(`   ID: ${report.id}`)
+            console.log(`   Title: ${report.title}`)
+            console.log(`   Format: ${report.format}`)
+            console.log(`   Sections: ${report.sections.length}`)
+            console.log(`   Generated: ${report.generatedAt}`)
+            
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: true, report }))
           })
         } catch (error) {
-          console.error('❌ Report generation error:', error)
+          console.error('❌ Report Generation Failed:', error)
           res.statusCode = 500
-          res.end(JSON.stringify({ success: false, error: error.message }))
+          res.end(JSON.stringify({ success: false, message: error.message }))
         }
       })
 
@@ -396,7 +410,7 @@ export default defineConfig({
 
           let body = ''
           req.on('data', chunk => body += chunk)
-          req.on('end', () => {
+          req.on('end', async () => {
             const { analysisType = 'full', trigger = 'manual' } = JSON.parse(body || '{}')
             
             console.log('🤖 AI ANALYSIS TRIGGERED')
@@ -404,23 +418,69 @@ export default defineConfig({
             console.log(`   Trigger: ${trigger}`)
             console.log(`   Timestamp: ${new Date().toISOString()}`)
             
-            const mockResponse = {
-              success: true,
-              analysisId: `ANA-${Date.now()}`,
+            // Simulate AI analysis with structured results
+            const results = {
+              id: `ANA-${Date.now()}`,
               type: analysisType,
-              status: 'initiated',
-              estimatedTime: '15-30 seconds',
-              message: '✅ AI Analysis started successfully',
-              timestamp: new Date().toISOString()
+              trigger,
+              status: 'completed',
+              summary: 'Strategic portfolio analysis complete. 3 active projects with 67% task completion rate. Strong momentum in Q-VAN and WOW MENA initiatives. Recommended: accelerate EV-Logistics partnerships.',
+              insights: [
+                {
+                  category: 'Portfolio Health',
+                  status: 'positive',
+                  message: 'All 3 projects on track with strong execution velocity',
+                  confidence: 92
+                },
+                {
+                  category: 'Resource Allocation',
+                  status: 'attention',
+                  message: 'Q-VAN requires additional technical resources in Q1 2026',
+                  confidence: 85
+                },
+                {
+                  category: 'Market Timing',
+                  status: 'positive',
+                  message: 'MENA mobility sector momentum aligns with project roadmaps',
+                  confidence: 88
+                }
+              ],
+              recommendations: [
+                'Accelerate Q-VAN partnership discussions with OEMs',
+                'Expand WOW MENA pilot scope to 2-3 additional cities',
+                'Consider pre-seed fundraising ($3-5M) to maintain velocity',
+                'Establish advisory board with regional logistics executives'
+              ],
+              metrics: {
+                projectsAnalyzed: 3,
+                tasksReviewed: 45,
+                risksIdentified: 2,
+                opportunitiesFound: 7,
+                dataPoints: 127
+              },
+              nextActions: [
+                { priority: 'high', action: 'Schedule Q-VAN partnership calls', deadline: '2025-11-15' },
+                { priority: 'medium', action: 'Draft WOW MENA expansion proposal', deadline: '2025-11-30' },
+                { priority: 'medium', action: 'Prepare investor deck', deadline: '2025-12-15' }
+              ],
+              confidence: 89,
+              completedAt: new Date().toISOString(),
+              estimatedTime: '15-30 seconds'
             }
             
+            console.log('🤖 ANALYSIS COMPLETE')
+            console.log(`   ID: ${results.id}`)
+            console.log(`   Insights: ${results.insights.length}`)
+            console.log(`   Recommendations: ${results.recommendations.length}`)
+            console.log(`   Confidence: ${results.confidence}%`)
+            
             res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify(mockResponse))
+            res.end(JSON.stringify({ success: true, results }))
           })
         } catch (error) {
-          console.error('❌ Analysis trigger error:', error)
+          console.error('❌ Analysis Failed:', error)
           res.statusCode = 500
-          res.end(JSON.stringify({ success: false, error: error.message }))
+          res.end(JSON.stringify({ success: false, message: error.message }))
         }
       })
     }
