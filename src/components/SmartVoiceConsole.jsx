@@ -32,6 +32,7 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
     const memory = initializeMemory();
     const rules = getRules();
     console.log('🧠 Emma Ground Rules Loaded:', rules);
+    console.log('📊 Total Rules:', rules.length, '(including self-learning Rules 11 & 12)');
     remember('sessionStart', `Emma initialized for ${new Date().toLocaleString()}`);
   }, []);
 

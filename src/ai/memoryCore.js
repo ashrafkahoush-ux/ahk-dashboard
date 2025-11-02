@@ -47,7 +47,9 @@ function getDefaultMemory() {
       "Adapt tone to Ash's energy: visionary, firm, passionate.",
       "Link every action to AHKStrategies' empire-building roadmap.",
       "Integrate emotional intelligence — read the mood from the context.",
-      "Protect confidentiality and stability of AHK's systems and data."
+      "Protect confidentiality and stability of AHK's systems and data.",
+      "Regularly summarize new logs into insights about Ash's preferences and workflow patterns.",
+      "Continuously improve suggestions based on previous decisions, avoiding repetition and reinforcing preferred styles."
     ],
     preferences: {
       language: "English",
@@ -318,4 +320,182 @@ export function initializeMemory() {
   remember('system_init', `Emma Memory Core initialized at ${new Date().toLocaleString()}`);
 
   return memory;
+}
+
+/**
+ * Rule 11: Summarize logs into insights about preferences and patterns
+ * Analyzes recent logs to extract workflow patterns
+ */
+export function summarizeLogsToInsights() {
+  const memory = loadMemory();
+  const recentLogs = memory.logs.slice(-50); // Analyze last 50 logs
+  
+  const insights = {
+    timestamp: new Date().toISOString(),
+    patterns: {},
+    preferences: {},
+    recommendations: []
+  };
+
+  // Analyze command patterns
+  const commandLogs = recentLogs.filter(log => log.key === 'command_executed');
+  const commandCounts = {};
+  commandLogs.forEach(log => {
+    const cmd = log.value.command;
+    commandCounts[cmd] = (commandCounts[cmd] || 0) + 1;
+  });
+
+  // Find most frequent commands
+  const sortedCommands = Object.entries(commandCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 3);
+  
+  if (sortedCommands.length > 0) {
+    insights.patterns.frequentCommands = sortedCommands.map(([cmd, count]) => ({
+      command: cmd,
+      count,
+      suggestion: `Ash frequently uses '${cmd}' - consider quick action shortcut`
+    }));
+  }
+
+  // Analyze time patterns
+  const hourCounts = {};
+  recentLogs.forEach(log => {
+    const hour = new Date(log.timestamp).getHours();
+    hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+  });
+  
+  const peakHours = Object.entries(hourCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, 2);
+  
+  if (peakHours.length > 0) {
+    insights.patterns.activeHours = peakHours.map(([hour, count]) => ({
+      hour: parseInt(hour),
+      count,
+      suggestion: `Peak activity at ${hour}:00 - proactive suggestions optimal at this time`
+    }));
+  }
+
+  // Analyze report preferences
+  const reportLogs = recentLogs.filter(log => log.key === 'report_generated');
+  if (reportLogs.length > 0) {
+    const displayCount = reportLogs.filter(log => log.value.type === 'display').length;
+    const emailCount = reportLogs.filter(log => log.value.type === 'email').length;
+    
+    insights.preferences.reportDelivery = displayCount > emailCount ? 'display' : 'email';
+    insights.recommendations.push(
+      `Ash prefers ${insights.preferences.reportDelivery} for reports (${Math.max(displayCount, emailCount)}/${reportLogs.length} times)`
+    );
+  }
+
+  // Save insights to memory
+  remember('insights_generated', insights);
+  console.log('🧠 Emma generated insights from logs:', insights);
+  
+  return insights;
+}
+
+/**
+ * Rule 12: Improve suggestions based on previous decisions
+ * Tracks suggestion acceptance rate and adjusts future suggestions
+ */
+export function reinforcePreferredStyles() {
+  const memory = loadMemory();
+  
+  // Analyze suggestion history
+  const suggestionLogs = memory.logs.filter(log => log.key === 'suggestion_given');
+  const suggestionResponses = memory.logs.filter(log => 
+    log.key === 'command_executed' || log.key === 'suggestion_dismissed'
+  );
+
+  const reinforcement = {
+    timestamp: new Date().toISOString(),
+    totalSuggestions: suggestionLogs.length,
+    acceptedPatterns: [],
+    rejectedPatterns: [],
+    stylePreferences: {}
+  };
+
+  // Identify successful suggestion patterns
+  suggestionLogs.forEach((suggestionLog, index) => {
+    const suggestionTime = new Date(suggestionLog.timestamp).getTime();
+    
+    // Check if command was executed within 5 minutes after suggestion
+    const wasAccepted = suggestionResponses.some(response => {
+      const responseTime = new Date(response.timestamp).getTime();
+      return responseTime > suggestionTime && 
+             responseTime < suggestionTime + (5 * 60 * 1000) &&
+             response.key === 'command_executed';
+    });
+
+    if (wasAccepted) {
+      reinforcement.acceptedPatterns.push({
+        suggestion: suggestionLog.value,
+        context: 'User acted on suggestion within 5 minutes'
+      });
+    }
+  });
+
+  // Calculate acceptance rate
+  const acceptanceRate = suggestionLogs.length > 0
+    ? (reinforcement.acceptedPatterns.length / suggestionLogs.length) * 100
+    : 0;
+
+  reinforcement.acceptanceRate = Math.round(acceptanceRate);
+  
+  // Style preferences based on greeting responses
+  const greetingLogs = memory.logs.filter(log => log.key === 'greeting_given');
+  if (greetingLogs.length > 0) {
+    const recentGreetings = greetingLogs.slice(-10);
+    const contextualGreetings = recentGreetings.filter(log => 
+      log.value.greeting && log.value.page
+    ).length;
+    
+    reinforcement.stylePreferences.contextualGreetings = contextualGreetings > 5;
+    reinforcement.stylePreferences.preferredGreetingStyle = contextualGreetings > 5
+      ? 'contextual and page-specific'
+      : 'general and friendly';
+  }
+
+  // Recommendations for improvement
+  if (acceptanceRate < 30) {
+    reinforcement.recommendations = [
+      'Low suggestion acceptance - adjust timing or relevance',
+      'Consider more contextual suggestions based on current page',
+      'Review suggestion patterns against completed tasks'
+    ];
+  } else if (acceptanceRate > 70) {
+    reinforcement.recommendations = [
+      'High suggestion acceptance - current patterns working well',
+      'Continue with contextual, proactive suggestions',
+      'Maintain balance to avoid being intrusive'
+    ];
+  }
+
+  // Save reinforcement learning to memory
+  remember('reinforcement_learning', reinforcement);
+  console.log('🎯 Emma reinforced preferred styles:', reinforcement);
+  
+  return reinforcement;
+}
+
+/**
+ * Apply self-learning rules (Rules 11 & 12)
+ * Should be called periodically to improve Emma's performance
+ */
+export function applySelfLearningRules() {
+  console.log('🧠 Emma applying self-learning rules...');
+  
+  // Rule 11: Summarize logs to insights
+  const insights = summarizeLogsToInsights();
+  
+  // Rule 12: Reinforce preferred styles
+  const reinforcement = reinforcePreferredStyles();
+  
+  return {
+    insights,
+    reinforcement,
+    timestamp: new Date().toISOString()
+  };
 }
