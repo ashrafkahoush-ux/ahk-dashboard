@@ -11,6 +11,7 @@
     "pilot:shiftev": "curl -X POST http://localhost:3000/api/fusion/analyze -H \"Content-Type: application/json\" -d \"{\\\"client_id\\\":\\\"shift-ev-egypt\\\"}\" && curl -X POST http://localhost:3000/api/reports/generate -H \"Content-Type: application/json\" -d \"{\\\"client_id\\\":\\\"shift-ev-egypt\\\",\\\"deliver\\\":\\\"display\\\"}\""
   },
   "dependencies": {
+    "googleapis": "^118.0.0",
     "lucide-react": "^0.445.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

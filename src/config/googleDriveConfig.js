@@ -1,0 +1,100 @@
+/**
+ * Google Drive Configuration for Emma Ecosystem
+ * Links personal and business Google Drives for seamless access
+ */
+
+export const GOOGLE_CREDENTIALS = {
+  personal: {
+    client_email: "ashraf.kahoush@gmail.com",
+    driveFolder: "My Drive",
+    permission: "owner",
+    description: "Personal Google Drive - Primary knowledge source"
+  },
+  work: {
+    client_email: "ashraf@ahkstrategies.net",
+    driveFolder: "AHKStrategies Shared Drive",
+    permission: "owner",
+    description: "Business Google Workspace - Company knowledge base"
+  }
+};
+
+/**
+ * Emma folder structure across both drives
+ */
+export const EMMA_FOLDER_STRUCTURE = {
+  root: "Emma",
+  subfolders: [
+    {
+      name: "KnowledgeBase",
+      description: "Core knowledge, facts, and reference materials",
+      syncFrequency: "daily"
+    },
+    {
+      name: "Instructions",
+      description: "Operating instructions and protocols for Emma, Grok, ProGemini",
+      syncFrequency: "realtime"
+    },
+    {
+      name: "Dictionaries",
+      description: "Terminology, acronyms, and domain-specific language",
+      syncFrequency: "daily"
+    },
+    {
+      name: "Logs",
+      description: "Activity logs, analysis history, and interaction records",
+      syncFrequency: "hourly"
+    },
+    {
+      name: "Archives",
+      description: "Historical data and deprecated materials",
+      syncFrequency: "weekly"
+    }
+  ]
+};
+
+/**
+ * OAuth2 configuration for Google Drive API
+ */
+export const OAUTH_CONFIG = {
+  scopes: [
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/drive.metadata.readonly'
+  ],
+  redirect_uri: 'http://localhost:3000/oauth2callback'
+};
+
+/**
+ * Sync settings for Emma
+ */
+export const SYNC_SETTINGS = {
+  autoSync: true,
+  syncInterval: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
+  maxFileSize: 50 * 1024 * 1024, // 50MB
+  allowedMimeTypes: [
+    'application/pdf',
+    'application/vnd.google-apps.document',
+    'application/vnd.google-apps.spreadsheet',
+    'text/plain',
+    'text/markdown',
+    'application/json'
+  ],
+  excludePatterns: [
+    /^~\$/,  // Temp files
+    /\.tmp$/,
+    /^\./ // Hidden files
+  ]
+};
+
+/**
+ * Get environment variables for Google Drive authentication
+ */
+export function getGoogleEnv() {
+  return {
+    apiKey: import.meta.env.VITE_GOOGLE_API_KEY || process.env.GOOGLE_API_KEY,
+    personalRefreshToken: import.meta.env.VITE_GOOGLE_PERSONAL_REFRESH_TOKEN || process.env.GOOGLE_PERSONAL_REFRESH_TOKEN,
+    workRefreshToken: import.meta.env.VITE_GOOGLE_WORK_REFRESH_TOKEN || process.env.GOOGLE_WORK_REFRESH_TOKEN,
+    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
+    clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET
+  };
+}

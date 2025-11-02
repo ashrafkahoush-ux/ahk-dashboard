@@ -980,6 +980,83 @@ export default defineConfig({
         })
       })
     }
+
+    // ========================================
+    // GOOGLE DRIVE API ENDPOINTS
+    // ========================================
+
+    /**
+     * GET /api/google-drive/status
+     * Returns connection status for personal and work drives
+     */
+    if (req.url === '/api/google-drive/status' && req.method === 'GET') {
+      return new Promise(async (resolve) => {
+        try {
+          console.log('[GOOGLE DRIVE] Status check request')
+          
+          // Dynamic import to avoid build issues
+          const { getDriveStatus } = await import('./src/integrations/googleDriveLinker.js')
+          
+          const status = await getDriveStatus()
+          
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ success: true, status }))
+          resolve()
+        } catch (err) {
+          console.error('[GOOGLE DRIVE] Status check error:', err)
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ 
+            success: false, 
+            error: err.message,
+            status: {
+              personal: { connected: false, emmaFolder: null },
+              work: { connected: false, emmaFolder: null }
+            }
+          }))
+          resolve()
+        }
+      })
+    }
+
+    /**
+     * POST /api/google-drive/sync
+     * Syncs Emma knowledge from both personal and work drives
+     */
+    if (req.url === '/api/google-drive/sync' && req.method === 'POST') {
+      return new Promise(async (resolve) => {
+        try {
+          console.log('[GOOGLE DRIVE] Sync request')
+          
+          // Dynamic import to avoid build issues
+          const { syncEmmaKnowledge } = await import('./src/integrations/googleDriveLinker.js')
+          
+          const syncResults = await syncEmmaKnowledge()
+          
+          console.log('[GOOGLE DRIVE] Sync complete:', syncResults)
+          
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ 
+            success: true, 
+            syncResults,
+            timestamp: new Date().toISOString()
+          }))
+          resolve()
+        } catch (err) {
+          console.error('[GOOGLE DRIVE] Sync error:', err)
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ 
+            success: false, 
+            error: err.message,
+            syncResults: []
+          }))
+          resolve()
+        }
+      })
+    }
   }
 })
 
