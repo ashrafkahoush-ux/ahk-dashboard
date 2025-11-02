@@ -339,30 +339,33 @@ export default defineConfig({
       server.middlewares.use('/api/generate-report', (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405
-          return res.end('Method Not Allowed')
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
         }
 
         let body = ''
-        req.on('data', chunk => body += chunk)
+        
+        req.on('data', chunk => { body += chunk })
+        
         req.on('end', () => {
           try {
+            console.log('📊 Report generation started')
             const { format = 'pdf', includeCharts = true, sections = [] } = JSON.parse(body || '{}')
             
-            // Generate comprehensive report structure
             const report = {
               id: Date.now(),
-              title: "AHK Strategies Performance Report",
+              title: 'AHK Strategies Performance Report',
               generatedAt: new Date().toISOString(),
               format,
               includeCharts,
               sections: sections.length > 0 ? sections : [
-                "Executive Summary",
-                "Portfolio Overview",
-                "Financial Metrics",
-                "Project Progress",
-                "AI Insights",
-                "Risk Analysis",
-                "Strategic Recommendations"
+                'Executive Summary',
+                'Portfolio Overview',
+                'Financial Metrics',
+                'Project Progress',
+                'AI Insights',
+                'Risk Analysis',
+                'Strategic Recommendations'
               ],
               metadata: {
                 reportType: 'strategic-dashboard',
@@ -380,31 +383,27 @@ export default defineConfig({
                 riskLevel: 'Medium'
               },
               downloadUrl: `/api/download-report/${Date.now()}`,
-              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days
+              expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
             }
             
-            console.log('📊 REPORT GENERATED')
-            console.log(`   ID: ${report.id}`)
-            console.log(`   Title: ${report.title}`)
-            console.log(`   Format: ${report.format}`)
-            console.log(`   Sections: ${report.sections.length}`)
-            console.log(`   Generated: ${report.generatedAt}`)
-            
+            res.statusCode = 200
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ success: true, report }))
-          } catch (error) {
-            console.error('❌ Report Generation Failed:', error)
+            
+            console.log('📊 REPORT GENERATED:', report)
+          } catch (err) {
+            console.error('❌ Error generating report:', err)
             res.statusCode = 500
             res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ success: false, message: error.message }))
+            res.end(JSON.stringify({ success: false, message: err.message }))
           }
         })
         
         req.on('error', (error) => {
-          console.error('❌ Request Error:', error)
+          console.error('❌ Request stream error:', error)
           res.statusCode = 500
           res.setHeader('Content-Type', 'application/json')
-          res.end(JSON.stringify({ success: false, message: error.message }))
+          res.end(JSON.stringify({ success: false, message: 'Stream error' }))
         })
       })
 
@@ -412,21 +411,19 @@ export default defineConfig({
       server.middlewares.use('/api/run-analysis', (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405
-          return res.end('Method Not Allowed')
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
         }
 
         let body = ''
-        req.on('data', chunk => body += chunk)
+        
+        req.on('data', chunk => { body += chunk })
+        
         req.on('end', () => {
           try {
+            console.log('🤖 AI Analysis started')
             const { analysisType = 'full', trigger = 'manual' } = JSON.parse(body || '{}')
             
-            console.log('🤖 AI ANALYSIS TRIGGERED')
-            console.log(`   Analysis Type: ${analysisType}`)
-            console.log(`   Trigger: ${trigger}`)
-            console.log(`   Timestamp: ${new Date().toISOString()}`)
-            
-            // Simulate AI analysis with structured results
             const results = {
               id: `ANA-${Date.now()}`,
               type: analysisType,
@@ -476,27 +473,24 @@ export default defineConfig({
               estimatedTime: '15-30 seconds'
             }
             
-            console.log('🤖 ANALYSIS COMPLETE')
-            console.log(`   ID: ${results.id}`)
-            console.log(`   Insights: ${results.insights.length}`)
-            console.log(`   Recommendations: ${results.recommendations.length}`)
-            console.log(`   Confidence: ${results.confidence}%`)
-            
+            res.statusCode = 200
             res.setHeader('Content-Type', 'application/json')
             res.end(JSON.stringify({ success: true, results }))
-          } catch (error) {
-            console.error('❌ Analysis Failed:', error)
+            
+            console.log('🤖 ANALYSIS COMPLETE:', results)
+          } catch (err) {
+            console.error('❌ Error running analysis:', err)
             res.statusCode = 500
             res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ success: false, message: error.message }))
+            res.end(JSON.stringify({ success: false, message: err.message }))
           }
         })
         
         req.on('error', (error) => {
-          console.error('❌ Request Error:', error)
+          console.error('❌ Request stream error:', error)
           res.statusCode = 500
           res.setHeader('Content-Type', 'application/json')
-          res.end(JSON.stringify({ success: false, message: error.message }))
+          res.end(JSON.stringify({ success: false, message: 'Stream error' }))
         })
       })
     }
