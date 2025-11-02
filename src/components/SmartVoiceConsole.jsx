@@ -1,19 +1,32 @@
 import React, { useEffect, useRef, useState } from "react";
 import { speak, stopSpeak, pickLang } from "../ai/speech";
+import { enhanceResponse, getGreeting, getConfirmation } from "../ai/responseEnhancer";
 
 export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [status, setStatus] = useState("Idle");
   const [isOpen, setIsOpen] = useState(false);
+  const [emmaState, setEmmaState] = useState("idle"); // idle, listening, thinking, speaking
   const recRef = useRef(null);
   const timeoutRef = useRef(null);
   const lang = pickLang(uiLang);
+  const hasGreeted = useRef(false);
+
+  // Greet user when opening console first time
+  useEffect(() => {
+    if (isOpen && !hasGreeted.current) {
+      const greeting = getGreeting("Ashraf");
+      speak(enhanceResponse(greeting), { lang, gender: "female" });
+      hasGreeted.current = true;
+    }
+  }, [isOpen]);
 
   const startListening = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      speak(uiLang === "ar" ? "التعرّف الصوتي غير مدعوم" : "Voice recognition not supported", { lang });
+      const errorMsg = uiLang === "ar" ? "التعرّف الصوتي غير مدعوم" : "Voice recognition not supported";
+      speak(enhanceResponse(errorMsg), { lang, gender: "female" });
       return;
     }
     const rec = new SR();
@@ -24,6 +37,7 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
 
     rec.onstart = () => {
       setIsListening(true);
+      setEmmaState("listening");
       setStatus(uiLang === "ar" ? "جارٍ الاستماع..." : "Listening...");
       setTranscript("");
       resetTimer();
@@ -36,34 +50,54 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
 
       // Emma start analysis
       if (/emma[, ]*\s*start analysis/i.test(text) || /إمّا[, ]*\s*(ابدئي|ابدأ)\s*التحليل/i.test(text)) {
-        speak(uiLang === "ar" ? "جارٍ تشغيل التحليل" : "Starting analysis", { lang, gender: "female" });
+        setEmmaState("thinking");
+        const msg = uiLang === "ar" ? "جارٍ تشغيل التحليل" : "Starting analysis";
+        speak(enhanceResponse(msg, { addPersonality: true }), { lang, gender: "female" });
         stopListening();
         onCommand?.("run-analysis");
       } 
       // Daily report request
       else if (/daily report/i.test(text) || /التقرير اليومي/i.test(text)) {
-        speak(uiLang === "ar" ? "هل ترغب بعرضه أم إرساله بالبريد؟" : "Would you like it displayed or emailed?", { lang, gender: "female" });
+        setEmmaState("speaking");
+        const msg = uiLang === "ar" ? "هل ترغب بعرضه أم إرساله بالبريد؟" : "Would you like it displayed or emailed?";
+        speak(enhanceResponse(msg), { lang, gender: "female" });
         setStatus("Awaiting choice");
       } 
       // Display choice
       else if (/display/i.test(text) || /عرض/i.test(text)) {
+        const confirm = getConfirmation();
+        speak(enhanceResponse(confirm), { lang, gender: "female" });
         onCommand?.("display-report");
         stopListening();
       } 
       // Email choice
       else if (/email/i.test(text) || /بريد/i.test(text)) {
+        const confirm = getConfirmation();
+        speak(enhanceResponse(confirm), { lang, gender: "female" });
         onCommand?.("email-report");
         stopListening();
       } 
       // Risk analysis
       else if (/risk/i.test(text) || /المخاطر/i.test(text)) {
+        setEmmaState("thinking");
+        const msg = uiLang === "ar" ? "جارٍ تحليل المخاطر" : "Running risk analysis";
+        speak(enhanceResponse(msg), { lang, gender: "female" });
         onCommand?.("risk-analysis");
         stopListening();
       } 
-      // Read report - NEW in v4
+      // Read report
       else if (/read( the)? report/i.test(text) || /اقرئي التقرير/i.test(text)) {
+        setEmmaState("speaking");
+        const msg = uiLang === "ar" ? "جارٍ قراءة التقرير" : "Reading the report now";
+        speak(enhanceResponse(msg), { lang, gender: "female" });
         onCommand?.("read-report");
-        speak(uiLang === "ar" ? "جارٍ قراءة التقرير" : "Reading the report", { lang, gender: "female" });
+        stopListening();
+      }
+      // Show reports archive
+      else if (/show reports|view archive/i.test(text) || /أظهر التقارير/i.test(text)) {
+        const msg = uiLang === "ar" ? "فتح أرشيف التقارير" : "Opening reports archive";
+        speak(enhanceResponse(msg), { lang, gender: "female" });
+        onCommand?.("show-reports");
         stopListening();
       }
     };
@@ -86,21 +120,43 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
     try { recRef.current?.stop(); } catch {}
     recRef.current = null;
     setIsListening(false);
+    setEmmaState("idle");
     if (reason) console.log("🎤 Voice stopped:", reason);
   };
 
   const resetTimer = () => {
     clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => stopListening("Silence timeout"), 60000);
+    timeoutRef.current = setTimeout(() => {
+      stopListening("Silence timeout");
+      const msg = uiLang === "ar" ? "سأكون هنا إذا احتجتني" : "I'll be here if you need me";
+      speak(enhanceResponse(msg), { lang, gender: "female" });
+    }, 60000);
   };
 
   const closeConsole = () => {
     stopSpeak();
     stopListening("Manual close");
     setIsOpen(false);
+    setEmmaState("idle");
   };
 
   useEffect(() => () => stopListening("Unmount"), []);
+
+  // Emma state indicator styles
+  const getEmmaIndicator = () => {
+    switch (emmaState) {
+      case "listening":
+        return { color: "#10b981", icon: "🎤", label: "Listening" };
+      case "thinking":
+        return { color: "#f59e0b", icon: "🧠", label: "Thinking" };
+      case "speaking":
+        return { color: "#8b5cf6", icon: "💬", label: "Speaking" };
+      default:
+        return { color: "#6b7280", icon: "😊", label: "Ready" };
+    }
+  };
+
+  const indicator = getEmmaIndicator();
 
   return (
     <>
@@ -115,13 +171,21 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
 
       {/* Voice Console Panel */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[360px] p-4 rounded-2xl shadow-2xl bg-[#0b1020] text-white border border-white/10">
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-semibold text-lg">Emma Voice Console</span>
+        <div className="fixed bottom-24 right-6 z-50 w-[380px] p-4 rounded-2xl shadow-2xl bg-gradient-to-br from-[#0b1020] via-[#1e1b4b] to-[#0b1020] text-white border border-purple-500/30">
+          {/* Header with Emma Status */}
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2">
+              <div 
+                className="h-3 w-3 rounded-full animate-pulse" 
+                style={{ backgroundColor: indicator.color }}
+              />
+              <span className="font-semibold text-lg">Emma</span>
+              <span className="text-xs opacity-60">{indicator.icon} {indicator.label}</span>
+            </div>
             <div className="space-x-2">
               <button
                 onClick={isListening ? () => stopListening("Manual stop") : startListening}
-                className={`px-3 py-1 rounded text-sm ${isListening ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
+                className={`px-3 py-1 rounded text-sm transition-all ${isListening ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
               >
                 {isListening ? (uiLang === "ar" ? "إيقاف" : "Stop") : (uiLang === "ar" ? "تحدث" : "Speak")}
               </button>

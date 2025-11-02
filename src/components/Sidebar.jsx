@@ -6,7 +6,8 @@ import {
   FolderOpen,
   ChevronLeft,
   Zap,
-  Handshake
+  Handshake,
+  FileText
 } from 'lucide-react'
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -16,6 +17,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { path: '/marketing', icon: TrendingUp, label: 'Marketing Pulse' },
     { path: '/assets', icon: FolderOpen, label: 'Asset Vault' },
     { path: '/partnerships', icon: Handshake, label: 'Partnerships' },
+    { path: '/reports', icon: FileText, label: 'Reports Archive' },
   ]
 
   return (

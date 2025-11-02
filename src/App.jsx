@@ -5,6 +5,7 @@ import Strategy from './pages/Strategy'
 import MarketingPulse from './pages/MarketingPulse'
 import AssetVault from './pages/AssetVault'
 import Partnerships from './pages/Partnerships'
+import ReportsArchive from './components/ReportsArchive'
 import AICoPilot from './components/AICoPilot'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { preparePrompt } from './ai/autoAgent.browser'
@@ -54,9 +55,10 @@ function AppContent() {
         <Route path="/marketing" element={<MarketingPulse />} />
         <Route path="/assets" element={<AssetVault />} />
         <Route path="/partnerships" element={<Partnerships />} />
+        <Route path="/reports" element={<ReportsArchive />} />
       </Routes>
 
-      {/* Global AI Co-Pilot - Available on all pages (includes Smart Voice Console v3) */}
+      {/* Global AI Co-Pilot - Available on all pages (includes Emma Voice Console) */}
       <AICoPilot />
     </Layout>
   )

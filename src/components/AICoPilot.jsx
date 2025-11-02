@@ -1,5 +1,6 @@
 // src/components/AICoPilot.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { fetchGeminiAnalysis, testGeminiConnection } from '../api/geminiClient';
 import { runMultiAIAnalysis } from '../ai/orchestrator';
 import { preparePrompt } from '../ai/autoAgent.browser';
@@ -9,8 +10,10 @@ import { useProjects, useRoadmap } from '../utils/useData';
 import metricsData from '../data/metrics.json';
 import SmartVoiceConsole from './SmartVoiceConsole';
 import { speak, pickLang } from '../ai/speech';
+import ReportsManager from '../utils/reportsStorage';
 
 export default function AICoPilot() {
+  const navigate = useNavigate();
   const [expanded, setExpanded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
@@ -27,7 +30,7 @@ export default function AICoPilot() {
   const projects = useProjects();
   const roadmap = useRoadmap();
 
-  // Voice command handler for SmartVoiceConsole v3
+  // Voice command handler for Emma Voice Console
   const handleVoiceCommand = async (cmd) => {
     const lang = pickLang(currentLanguage);
     
@@ -39,6 +42,28 @@ export default function AICoPilot() {
         break;
         
       case "display-report":
+        setExpanded(true);
+        try {
+          const response = await fetch("/api/generate-report", { method: "POST" });
+          const data = await response.json();
+          console.log("📊 Report generated:", data);
+          
+          // Save report to archive
+          if (data.success && data.report) {
+            ReportsManager.saveReport({
+              title: data.report.title || 'AHK Performance Report',
+              type: data.report.format || 'PDF',
+              summary: data.report.summary?.totalProjects 
+                ? `${data.report.summary.totalProjects} projects, ${data.report.summary.completionRate} completion`
+                : 'Strategic performance report'
+            });
+          }
+          
+          speak(currentLanguage === "ar" ? "تم عرض التقرير" : "Report displayed", { lang, gender: "female" });
+        } catch (error) {
+          speak(currentLanguage === "ar" ? "خطأ في التقرير" : "Report error", { lang, gender: "female" });
+        }
+        break;
         setExpanded(true);
         try {
           const response = await fetch("/api/generate-report", { method: "POST" });
@@ -87,6 +112,11 @@ export default function AICoPilot() {
         } catch (error) {
           speak(currentLanguage === "ar" ? "لم أتمكن من قراءة التقرير" : "Could not read the report", { lang, gender: "female" });
         }
+        break;
+        
+      case "show-reports":
+        navigate('/reports');
+        speak(currentLanguage === "ar" ? "فتح أرشيف التقارير" : "Opening reports archive", { lang, gender: "female" });
         break;
         
       default:
