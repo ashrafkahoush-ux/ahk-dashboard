@@ -18,6 +18,9 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
 
   function speak(text) {
     try {
+      // Cancel any ongoing speech first
+      window.speechSynthesis.cancel();
+      
       const lang = detectLangFromToggle(currentLang);
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang.tts;
@@ -74,7 +77,16 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
   }
 
   function stop() {
-    if (rec && active) rec.stop();
+    console.log('🛑 Voice agent stop() called');
+    
+    // Stop speech synthesis
+    window.speechSynthesis.cancel();
+    
+    // Stop recognition
+    if (rec && active) {
+      rec.stop();
+      active = false;
+    }
   }
 
   return { start, stop, speak, isActive: () => active };

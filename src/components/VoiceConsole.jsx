@@ -20,6 +20,7 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   const [expanded, setExpanded] = useState(false)
   const agentRef = useRef(null)
   const inactivityTimer = useRef(null)
+  const isStopped = useRef(false) // Track if user explicitly stopped
 
   useEffect(() => {
     // Set language on mount
@@ -67,6 +68,12 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   }
 
   function say(text) {
+    // Don't speak if user has explicitly stopped
+    if (isStopped.current) {
+      console.log('🛑 Speech blocked - user stopped console');
+      return;
+    }
+    
     setReply(text)
     agentRef.current?.speak(text)
     setExpanded(true)
@@ -89,17 +96,39 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
 
   function toggleExpanded() {
     if (expanded) {
-      setExpanded(false)
+      // User is closing console - stop everything
+      stop();
     } else {
+      // User is opening console
+      isStopped.current = false; // Reset stop flag when opening
       setExpanded(true)
       agentRef.current?.start()
     }
   }
 
   function stop() {
-    agentRef.current?.stop()
-    setStatus('idle')
-    setTimeout(() => setExpanded(false), 2000)
+    console.log('🛑 STOP BUTTON PRESSED - Killing all speech');
+    
+    // Set stop flag to block any new speech
+    isStopped.current = true;
+    
+    // Kill all speech synthesis immediately
+    window.speechSynthesis.cancel();
+    
+    // Stop voice recognition
+    agentRef.current?.stop();
+    
+    // Clear UI
+    setReply('');
+    setTranscript('');
+    setStatus('idle');
+    
+    // Close console after brief delay
+    setTimeout(() => {
+      setExpanded(false);
+      // Reset stop flag after console closes
+      isStopped.current = false;
+    }, 1000);
   }
 
   async function handleCommand(raw) {
@@ -109,19 +138,41 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
     
     console.log(`🎯 Intent: ${intent} (${confidence}% confidence) - Command: "${raw}"`);
 
-    // STOP TALKING (highest priority - check first!)
-    // English: stop, quiet, silence, shut up, enough
+    // 🛑 STOP TALKING (HIGHEST PRIORITY - NO SPEECH ALLOWED!)
+    // English: stop, quiet, silence, shut up, enough, cancel, halt, pause
     // Arabic: قف، اسكت، كفى، خلاص
     const cmd = raw.toLowerCase();
     if (intent === 'stop' || 
         cmd.includes('قف') || cmd.includes('اسكت') || cmd.includes('كفى') || cmd.includes('خلاص')) {
-      window.speechSynthesis.cancel(); // Stop all speech immediately
-      agentRef.current?.stop(); // Stop voice recognition too!
+      
+      console.log('🛑 STOP COMMAND DETECTED - Killing all speech NOW');
+      
+      // Set stop flag FIRST to block any further speech
+      isStopped.current = true;
+      
+      // Kill all speech synthesis immediately
+      window.speechSynthesis.cancel();
+      
+      // Stop voice recognition
+      agentRef.current?.stop();
+      
+      // Clear UI
       setReply('');
+      setTranscript('');
       setStatus('idle');
-      setTimeout(() => setExpanded(false), 1500); // Close bubble after 1.5s
-      return; // Don't say anything, just stop!
+      
+      // Close console after brief delay
+      setTimeout(() => {
+        setExpanded(false);
+        // Reset stop flag after console closes
+        isStopped.current = false;
+      }, 1000);
+      
+      return; // EXIT IMMEDIATELY - NO MORE CODE EXECUTION
     }
+    
+    // Reset stop flag for normal commands
+    isStopped.current = false;
     
     // If no intent matched, try fallback
     if (!intent) {
