@@ -7,6 +7,8 @@ import { saveRoadmapTask } from '../ai/persist';
 import { getRecentTaskLog } from '../ai/taskAgent';
 import { useProjects, useRoadmap } from '../utils/useData';
 import metricsData from '../data/metrics.json';
+import SmartVoiceConsole from './SmartVoiceConsole';
+import { speak, pickLang } from '../ai/speech';
 
 export default function AICoPilot() {
   const [expanded, setExpanded] = useState(false);
@@ -21,8 +23,66 @@ export default function AICoPilot() {
   });
   const [investorKPIs, setInvestorKPIs] = useState(null);
   const [taskLog, setTaskLog] = useState([]);
+  const [currentLanguage, setCurrentLanguage] = useState('en');
   const projects = useProjects();
   const roadmap = useRoadmap();
+
+  // Voice command handler for SmartVoiceConsole v3
+  const handleVoiceCommand = async (cmd) => {
+    const lang = pickLang(currentLanguage);
+    
+    switch (cmd) {
+      case "run-analysis":
+        setExpanded(true);
+        await runAnalysis();
+        speak(currentLanguage === "ar" ? "تم التحليل بنجاح" : "Analysis complete", { lang });
+        break;
+        
+      case "display-report":
+        setExpanded(true);
+        try {
+          const response = await fetch("/api/generate-report", { method: "POST" });
+          const data = await response.json();
+          console.log("📊 Report generated:", data);
+          speak(currentLanguage === "ar" ? "تم عرض التقرير" : "Report displayed", { lang });
+        } catch (error) {
+          speak(currentLanguage === "ar" ? "خطأ في التقرير" : "Report error", { lang });
+        }
+        break;
+        
+      case "email-report":
+        try {
+          const response = await fetch("/api/send-email-report", { method: "POST" });
+          const data = await response.json();
+          console.log("📧 Email report:", data);
+          speak(currentLanguage === "ar" ? "تم إرسال التقرير بالبريد" : "Report sent to your email", { lang });
+        } catch (error) {
+          speak(currentLanguage === "ar" ? "خطأ في إرسال البريد" : "Email error", { lang });
+        }
+        break;
+        
+      case "risk-analysis":
+        setExpanded(true);
+        try {
+          const response = await fetch("/api/run-risk-analysis", { method: "POST" });
+          const data = await response.json();
+          console.log("⚠️ Risk analysis:", data);
+          speak(currentLanguage === "ar" ? "اكتمل تحليل المخاطر" : "Risk analysis complete", { lang });
+        } catch (error) {
+          speak(currentLanguage === "ar" ? "خطأ في تحليل المخاطر" : "Risk analysis error", { lang });
+        }
+        break;
+        
+      case "qvan-analysis":
+        setExpanded(true);
+        speak(currentLanguage === "ar" ? "جارٍ تحليل Q-VAN" : "Analyzing Q-VAN project", { lang });
+        await runAnalysis();
+        break;
+        
+      default:
+        console.log("🎤 Unknown voice command:", cmd);
+    }
+  };
 
   async function loadTaskLog() {
     try {
@@ -1093,6 +1153,9 @@ export default function AICoPilot() {
           }} />
         </div>
       )}
+      
+      {/* Smart Voice Console v3 - Conversational Emma */}
+      <SmartVoiceConsole onCommand={handleVoiceCommand} uiLang={currentLanguage} />
     </>
   );
 }

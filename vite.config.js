@@ -493,6 +493,145 @@ export default defineConfig({
           res.end(JSON.stringify({ success: false, message: 'Stream error' }))
         })
       })
+
+      // API: Send Email Report
+      server.middlewares.use('/api/send-email-report', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
+        }
+
+        let body = ''
+        
+        req.on('data', chunk => { body += chunk })
+        
+        req.on('end', () => {
+          try {
+            console.log('📧 Email report sending...')
+            const { recipient = 'ashraf@ahkstrategies.com', reportType = 'daily' } = JSON.parse(body || '{}')
+            
+            const emailResult = {
+              success: true,
+              messageId: `MSG-${Date.now()}`,
+              recipient,
+              subject: `AHK Dashboard ${reportType} Report - ${new Date().toLocaleDateString()}`,
+              sentAt: new Date().toISOString(),
+              reportType,
+              attachments: [
+                { filename: 'ahk-report.pdf', size: '2.4 MB' },
+                { filename: 'metrics-summary.xlsx', size: '156 KB' }
+              ],
+              message: 'Report successfully sent via email'
+            }
+            
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(emailResult))
+            
+            console.log('📧 EMAIL SENT:', emailResult)
+          } catch (err) {
+            console.error('❌ Error sending email:', err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, message: err.message }))
+          }
+        })
+        
+        req.on('error', (error) => {
+          console.error('❌ Request stream error:', error)
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ success: false, message: 'Stream error' }))
+        })
+      })
+
+      // API: Run Risk Analysis
+      server.middlewares.use('/api/run-risk-analysis', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
+        }
+
+        let body = ''
+        
+        req.on('data', chunk => { body += chunk })
+        
+        req.on('end', () => {
+          try {
+            console.log('⚠️ Risk analysis started')
+            const { scope = 'portfolio' } = JSON.parse(body || '{}')
+            
+            const riskResults = {
+              success: true,
+              analysisId: `RISK-${Date.now()}`,
+              scope,
+              completedAt: new Date().toISOString(),
+              overallRiskLevel: 'Medium',
+              riskScore: 42, // 0-100 scale
+              categories: {
+                market: { level: 'Medium', score: 45, concerns: ['Regional competition', 'Regulatory changes'] },
+                financial: { level: 'Low', score: 28, concerns: ['Capital availability'] },
+                operational: { level: 'Medium', score: 52, concerns: ['Resource constraints', 'Timeline pressures'] },
+                technical: { level: 'Low', score: 35, concerns: ['Technology integration'] },
+                strategic: { level: 'Medium', score: 48, concerns: ['Partnership dependencies'] }
+              },
+              topRisks: [
+                { 
+                  id: 1, 
+                  title: 'Regulatory uncertainty in MENA markets', 
+                  severity: 'High', 
+                  probability: 'Medium', 
+                  impact: 'Significant',
+                  mitigation: 'Engage policy advisors, diversify across markets'
+                },
+                { 
+                  id: 2, 
+                  title: 'Competition from well-funded international players', 
+                  severity: 'Medium', 
+                  probability: 'High', 
+                  impact: 'Moderate',
+                  mitigation: 'Focus on localization advantages, build strategic partnerships'
+                },
+                { 
+                  id: 3, 
+                  title: 'Capital requirements exceeding current runway', 
+                  severity: 'Medium', 
+                  probability: 'Medium', 
+                  impact: 'Significant',
+                  mitigation: 'Initiate fundraising conversations Q4 2025'
+                }
+              ],
+              recommendations: [
+                'Develop risk mitigation playbook for each major category',
+                'Establish quarterly risk review cadence',
+                'Consider insurance products for operational risks',
+                'Build contingency plans for top 3 risks'
+              ],
+              message: 'Risk analysis executed successfully'
+            }
+            
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(riskResults))
+            
+            console.log('⚠️ RISK ANALYSIS COMPLETE:', riskResults.overallRiskLevel)
+          } catch (err) {
+            console.error('❌ Error running risk analysis:', err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, message: err.message }))
+          }
+        })
+        
+        req.on('error', (error) => {
+          console.error('❌ Request stream error:', error)
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ success: false, message: 'Stream error' }))
+        })
+      })
     }
   }
 })

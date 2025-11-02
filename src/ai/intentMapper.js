@@ -100,6 +100,17 @@ const intents = {
     'stop autosync', 'auto sync off', 'disable auto sync'
   ],
   
+  // Voice Engine v2 - Wake Phrases
+  voiceStart: [
+    'emma start analysis', 'start analysis', 'run analysis',
+    'ابدئي التحليل', 'تشغيل التحليل'
+  ],
+  
+  voiceFusion: [
+    'start fusion', 'fusion analysis', 'emma start fusion',
+    'التحليل الاندماجي', 'ابدئي الاندماج'
+  ],
+  
   // Help & Support
   help: [
     'help', 'what can you do', 'commands',
