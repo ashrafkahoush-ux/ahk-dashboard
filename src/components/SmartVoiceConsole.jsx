@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { speak, stopSpeak, pickLang } from "../ai/speech";
 import { enhanceResponse, getGreeting, getConfirmation } from "../ai/responseEnhancer";
 import EmmaAvatar from "./EmmaAvatar";
+import EmmaNotifications, { useEmmaNotifications } from "./EmmaNotifications";
 import emmaMemory from "../ai/emmaMemory";
+import { usePageContext, getContextualGreeting } from "../ai/contextAwareness";
 
 export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const [isListening, setIsListening] = useState(false);
@@ -15,6 +17,8 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const timeoutRef = useRef(null);
   const lang = pickLang(uiLang);
   const hasGreeted = useRef(false);
+  const pageContext = usePageContext(); // Context awareness
+  const { notifications, addNotification, dismissNotification } = useEmmaNotifications();
 
   // Greet user when opening console first time
   useEffect(() => {
@@ -27,8 +31,16 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         // Show suggestion 50% of the time to avoid being annoying
         const suggestion = suggestions[0];
         speak(enhanceResponse(suggestion.message), { lang, gender: "female" });
+        
+        // Add to notifications
+        addNotification({
+          type: 'suggestion',
+          message: suggestion.message,
+          action: suggestion.action,
+        });
       } else {
-        const greeting = getGreeting("Ashraf");
+        // Use contextual greeting based on current page
+        const greeting = getContextualGreeting(pageContext, "Ashraf");
         speak(enhanceResponse(greeting), { lang, gender: "female" });
       }
       hasGreeted.current = true;
@@ -202,14 +214,26 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
 
   return (
     <>
-      {/* Emma Bot Button with Avatar */}
-      <button
-        onClick={() => setIsOpen(prev => !prev)}
-        className="fixed bottom-6 right-6 z-50 hover:scale-110 transition-transform"
-        title="Emma Voice Console"
-      >
-        <EmmaAvatar mood={emmaState} showParticles={showParticles} />
-      </button>
+      {/* Emma Bot Button with Avatar and Notifications */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => setIsOpen(prev => !prev)}
+          className="relative hover:scale-110 transition-transform"
+          title="Emma Voice Console"
+        >
+          <EmmaAvatar mood={emmaState} showParticles={showParticles} />
+          
+          {/* Notification Badge */}
+          <EmmaNotifications
+            notifications={notifications}
+            onDismiss={dismissNotification}
+            onAction={(action) => {
+              onCommand?.(action);
+              setIsOpen(false);
+            }}
+          />
+        </button>
+      </div>
 
       {/* Voice Console Panel */}
       {isOpen && (
