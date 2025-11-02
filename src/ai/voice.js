@@ -71,6 +71,12 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
         const cmd = finalText.trim();
         finalText = '';
         onCommand?.(cmd, { speak });
+        // Auto-stop recognition after command is received
+        setTimeout(() => {
+          if (rec && active) {
+            rec.stop();
+          }
+        }, 100);
       }
     };
     rec.start();

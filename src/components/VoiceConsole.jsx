@@ -64,7 +64,12 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   function resetInactivityTimer() {
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
     inactivityTimer.current = setTimeout(() => {
-      if (status === 'idle') setExpanded(false)
+      // Auto-close console after 3 seconds of inactivity
+      if (status === 'idle') {
+        setExpanded(false)
+        setReply('')
+        setTranscript('')
+      }
     }, 3000)
   }
 
@@ -75,10 +80,23 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
       return;
     }
     
+    // Cancel any ongoing speech before starting new one
+    window.speechSynthesis.cancel();
+    
     setReply(text)
     agentRef.current?.speak(text)
     setExpanded(true)
     resetInactivityTimer()
+    
+    // Auto-close after speech completes
+    const utteranceLength = text.length * 50; // Rough estimate: 50ms per character
+    setTimeout(() => {
+      if (!isStopped.current && status === 'idle') {
+        setExpanded(false);
+        setReply('');
+        setTranscript('');
+      }
+    }, Math.max(utteranceLength, 4000)); // Minimum 4 seconds
   }
 
   function toggleLang() {
@@ -128,8 +146,10 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
     setTimeout(() => {
       setExpanded(false);
       // Reset stop flag after console closes
-      isStopped.current = false;
-    }, 1000);
+      setTimeout(() => {
+        isStopped.current = false;
+      }, 500);
+    }, 800);
   }
 
   async function handleCommand(raw) {
