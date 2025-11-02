@@ -5,6 +5,13 @@ import EmmaAvatar from "./EmmaAvatar";
 import EmmaNotifications, { useEmmaNotifications } from "./EmmaNotifications";
 import emmaMemory from "../ai/emmaMemory";
 import { usePageContext, getContextualGreeting } from "../ai/contextAwareness";
+import { 
+  initializeMemory, 
+  getRules, 
+  remember, 
+  generateRuleBasedResponse,
+  getPreferredName 
+} from "../ai/memoryCore";
 
 export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const [isListening, setIsListening] = useState(false);
@@ -20,6 +27,14 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const pageContext = usePageContext(); // Context awareness
   const { notifications, addNotification, dismissNotification } = useEmmaNotifications();
 
+  // Initialize Memory Core on mount
+  useEffect(() => {
+    const memory = initializeMemory();
+    const rules = getRules();
+    console.log('🧠 Emma Ground Rules Loaded:', rules);
+    remember('sessionStart', `Emma initialized for ${new Date().toLocaleString()}`);
+  }, []);
+
   // Greet user when opening console first time
   useEffect(() => {
     if (isOpen && !hasGreeted.current) {
@@ -30,7 +45,9 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
       if (suggestions.length > 0 && Math.random() > 0.5) {
         // Show suggestion 50% of the time to avoid being annoying
         const suggestion = suggestions[0];
-        speak(enhanceResponse(suggestion.message), { lang, gender: "female" });
+        const enhancedMsg = generateRuleBasedResponse(suggestion.message, { type: 'suggestion' });
+        speak(enhanceResponse(enhancedMsg), { lang, gender: "female" });
+        remember('suggestion_given', suggestion);
         
         // Add to notifications
         addNotification({
@@ -39,9 +56,15 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
           action: suggestion.action,
         });
       } else {
-        // Use contextual greeting based on current page
-        const greeting = getContextualGreeting(pageContext, "Ashraf");
-        speak(enhanceResponse(greeting), { lang, gender: "female" });
+        // Use contextual greeting based on current page + Memory Core
+        const preferredName = getPreferredName();
+        const greeting = getContextualGreeting(pageContext, preferredName);
+        const enhancedGreeting = generateRuleBasedResponse(greeting, { 
+          type: 'greeting', 
+          page: pageContext.page 
+        });
+        speak(enhanceResponse(enhancedGreeting), { lang, gender: "female" });
+        remember('greeting_given', { greeting: enhancedGreeting, page: pageContext.page });
       }
       hasGreeted.current = true;
     }
@@ -77,8 +100,10 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
       if (/emma[, ]*\s*start analysis/i.test(text) || /إمّا[, ]*\s*(ابدئي|ابدأ)\s*التحليل/i.test(text)) {
         setEmmaState("thinking");
         const msg = uiLang === "ar" ? "جارٍ تشغيل التحليل" : "Starting analysis";
-        speak(enhanceResponse(msg, { addPersonality: true }), { lang, gender: "female" });
+        const enhancedMsg = generateRuleBasedResponse(msg, { type: 'action', includesTasks: true });
+        speak(enhanceResponse(enhancedMsg, { addPersonality: true }), { lang, gender: "female" });
         emmaMemory.recordCommand("run-analysis"); // Track command
+        remember('command_executed', { command: 'run-analysis', timestamp: Date.now() });
         stopListening();
         onCommand?.("run-analysis");
       } 
@@ -93,16 +118,19 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
       // Display choice
       else if (/display/i.test(text) || /عرض/i.test(text)) {
         const confirm = getConfirmation();
-        speak(enhanceResponse(confirm), { lang, gender: "female" });
+        const enhancedConfirm = generateRuleBasedResponse(confirm, { type: 'action' });
+        speak(enhanceResponse(enhancedConfirm), { lang, gender: "female" });
         setEmmaState("working");
         emmaMemory.recordCommand("display-report"); // Track command
         emmaMemory.recordReportGeneration(); // Track report generation
-        setPreference('reportDelivery', 'display'); // Learn preference
+        emmaMemory.setPreference('reportDelivery', 'display'); // Learn preference
+        remember('report_generated', { type: 'display', timestamp: Date.now() });
         onCommand?.("display-report");
         // Show celebration after command completes
         setTimeout(() => {
           setEmmaState("happy");
           setShowParticles(true);
+          remember('milestone', { event: 'report_displayed_successfully', timestamp: Date.now() });
           setTimeout(() => {
             setShowParticles(false);
             setEmmaState("idle");
