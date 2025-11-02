@@ -35,7 +35,7 @@ export default function AICoPilot() {
       case "run-analysis":
         setExpanded(true);
         await runAnalysis();
-        speak(currentLanguage === "ar" ? "تم التحليل بنجاح" : "Analysis complete", { lang });
+        speak(currentLanguage === "ar" ? "تم التحليل بنجاح" : "Analysis complete", { lang, gender: "female" });
         break;
         
       case "display-report":
@@ -44,9 +44,9 @@ export default function AICoPilot() {
           const response = await fetch("/api/generate-report", { method: "POST" });
           const data = await response.json();
           console.log("📊 Report generated:", data);
-          speak(currentLanguage === "ar" ? "تم عرض التقرير" : "Report displayed", { lang });
+          speak(currentLanguage === "ar" ? "تم عرض التقرير" : "Report displayed", { lang, gender: "female" });
         } catch (error) {
-          speak(currentLanguage === "ar" ? "خطأ في التقرير" : "Report error", { lang });
+          speak(currentLanguage === "ar" ? "خطأ في التقرير" : "Report error", { lang, gender: "female" });
         }
         break;
         
@@ -55,9 +55,9 @@ export default function AICoPilot() {
           const response = await fetch("/api/send-email-report", { method: "POST" });
           const data = await response.json();
           console.log("📧 Email report:", data);
-          speak(currentLanguage === "ar" ? "تم إرسال التقرير بالبريد" : "Report sent to your email", { lang });
+          speak(currentLanguage === "ar" ? "تم إرسال التقرير بالبريد" : "Report sent to your email", { lang, gender: "female" });
         } catch (error) {
-          speak(currentLanguage === "ar" ? "خطأ في إرسال البريد" : "Email error", { lang });
+          speak(currentLanguage === "ar" ? "خطأ في إرسال البريد" : "Email error", { lang, gender: "female" });
         }
         break;
         
@@ -67,16 +67,26 @@ export default function AICoPilot() {
           const response = await fetch("/api/run-risk-analysis", { method: "POST" });
           const data = await response.json();
           console.log("⚠️ Risk analysis:", data);
-          speak(currentLanguage === "ar" ? "اكتمل تحليل المخاطر" : "Risk analysis complete", { lang });
+          speak(currentLanguage === "ar" ? "اكتمل تحليل المخاطر" : "Risk analysis complete", { lang, gender: "female" });
         } catch (error) {
-          speak(currentLanguage === "ar" ? "خطأ في تحليل المخاطر" : "Risk analysis error", { lang });
+          speak(currentLanguage === "ar" ? "خطأ في تحليل المخاطر" : "Risk analysis error", { lang, gender: "female" });
         }
         break;
         
       case "qvan-analysis":
         setExpanded(true);
-        speak(currentLanguage === "ar" ? "جارٍ تحليل Q-VAN" : "Analyzing Q-VAN project", { lang });
+        speak(currentLanguage === "ar" ? "جارٍ تحليل Q-VAN" : "Analyzing Q-VAN project", { lang, gender: "female" });
         await runAnalysis();
+        break;
+        
+      case "read-report":
+        try {
+          const response = await fetch("/api/get-report-text");
+          const reportText = await response.text();
+          speak(reportText, { lang, gender: "female" });
+        } catch (error) {
+          speak(currentLanguage === "ar" ? "لم أتمكن من قراءة التقرير" : "Could not read the report", { lang, gender: "female" });
+        }
         break;
         
       default:

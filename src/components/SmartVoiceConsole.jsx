@@ -1,10 +1,11 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { speak, stopSpeak, pickLang } from "../ai/speech";
 
 export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
-  const [listening, setListening] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [status, setStatus] = useState("Idle");
+  const [isOpen, setIsOpen] = useState(false);
   const recRef = useRef(null);
   const timeoutRef = useRef(null);
   const lang = pickLang(uiLang);
@@ -22,119 +23,127 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
     rec.continuous = true;
 
     rec.onstart = () => {
-      setListening(true);
+      setIsListening(true);
       setStatus(uiLang === "ar" ? "جارٍ الاستماع..." : "Listening...");
       setTranscript("");
       resetTimer();
     };
 
     rec.onresult = (e) => {
-      const txt = Array.from(e.results).map(r => r[0].transcript).join(" ");
-      setTranscript(txt);
+      const text = Array.from(e.results).map(r => r[0].transcript).join(" ");
+      setTranscript(text);
       resetTimer();
 
-      // Wake phrase detection
-      if (/emma[, ]*\s*start analysis/i.test(txt) || /إمّا[, ]*\s*(ابدئي|ابدأ)\s*التحليل/i.test(txt)) {
-        speak(uiLang === "ar" ? "جارٍ تشغيل التحليل" : "Starting analysis", { lang });
+      // Emma start analysis
+      if (/emma[, ]*\s*start analysis/i.test(text) || /إمّا[, ]*\s*(ابدئي|ابدأ)\s*التحليل/i.test(text)) {
+        speak(uiLang === "ar" ? "جارٍ تشغيل التحليل" : "Starting analysis", { lang, gender: "female" });
         stopListening();
         onCommand?.("run-analysis");
       } 
       // Daily report request
-      else if (/daily report/i.test(txt) || /التقرير اليومي/i.test(txt)) {
-        speak(uiLang === "ar" ? "هل ترغب بعرضه أم إرساله بالبريد؟" : "Would you like it displayed or emailed?", { lang });
-        setStatus(uiLang === "ar" ? "في انتظار اختيارك" : "Awaiting choice");
+      else if (/daily report/i.test(text) || /التقرير اليومي/i.test(text)) {
+        speak(uiLang === "ar" ? "هل ترغب بعرضه أم إرساله بالبريد؟" : "Would you like it displayed or emailed?", { lang, gender: "female" });
+        setStatus("Awaiting choice");
       } 
       // Display choice
-      else if (/display/i.test(txt) || /عرض/i.test(txt)) {
-        speak(uiLang === "ar" ? "جارٍ عرض التقرير" : "Displaying report", { lang });
-        stopListening();
+      else if (/display/i.test(text) || /عرض/i.test(text)) {
         onCommand?.("display-report");
+        stopListening();
       } 
       // Email choice
-      else if (/email/i.test(txt) || /بريد/i.test(txt)) {
-        speak(uiLang === "ar" ? "جارٍ إرسال التقرير بالبريد" : "Sending report via email", { lang });
-        stopListening();
+      else if (/email/i.test(text) || /بريد/i.test(text)) {
         onCommand?.("email-report");
+        stopListening();
       } 
       // Risk analysis
-      else if (/risk/i.test(txt) || /المخاطر/i.test(txt)) {
-        speak(uiLang === "ar" ? "جارٍ تحليل المخاطر" : "Running risk analysis", { lang });
-        stopListening();
+      else if (/risk/i.test(text) || /المخاطر/i.test(text)) {
         onCommand?.("risk-analysis");
-      }
-      // Q-VAN analysis
-      else if (/q[\s-]?van/i.test(txt) || /كيو فان/i.test(txt)) {
-        speak(uiLang === "ar" ? "جارٍ تحليل Q-VAN" : "Analyzing Q-VAN", { lang });
         stopListening();
-        onCommand?.("qvan-analysis");
+      } 
+      // Read report - NEW in v4
+      else if (/read( the)? report/i.test(text) || /اقرئي التقرير/i.test(text)) {
+        onCommand?.("read-report");
+        speak(uiLang === "ar" ? "جارٍ قراءة التقرير" : "Reading the report", { lang, gender: "female" });
+        stopListening();
       }
     };
 
-    rec.onerror = e => { 
-      setStatus(`Error: ${e.error}`); 
-      stopListening(); 
+    rec.onerror = (e) => {
+      setStatus(`Error: ${e.error}`);
+      stopListening();
     };
-    
-    rec.onend = () => { 
-      setListening(false); 
-      recRef.current = null; 
-      setStatus(uiLang === "ar" ? "متوقف" : "Stopped"); 
+
+    rec.onend = () => {
+      setIsListening(false);
+      recRef.current = null;
     };
-    
+
     rec.start();
   };
 
   const stopListening = (reason = "") => {
     clearTimeout(timeoutRef.current);
-    recRef.current?.stop?.();
+    try { recRef.current?.stop(); } catch {}
     recRef.current = null;
-    setListening(false);
+    setIsListening(false);
     if (reason) console.log("🎤 Voice stopped:", reason);
   };
 
   const resetTimer = () => {
     clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      stopListening("Silence timeout");
-      setStatus(uiLang === "ar" ? "انتهى الوقت (60 ثانية)" : "Timed out (60s silence)");
-    }, 60000);
+    timeoutRef.current = setTimeout(() => stopListening("Silence timeout"), 60000);
+  };
+
+  const closeConsole = () => {
+    stopSpeak();
+    stopListening("Manual close");
+    setIsOpen(false);
   };
 
   useEffect(() => () => stopListening("Unmount"), []);
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
-      {/* Mic Button */}
+    <>
+      {/* Emma Bot Button */}
       <button
-        onClick={() => (listening ? stopListening("Manual") : startListening())}
-        className={`h-14 w-14 rounded-full shadow-xl flex items-center justify-center text-2xl transition-all duration-200 ${
-          listening ? "bg-red-600 hover:bg-red-700 animate-pulse" : "bg-green-600 hover:bg-green-700"
-        }`}
-        title={listening ? "Stop Emma" : "Start Emma"}
+        onClick={() => setIsOpen(prev => !prev)}
+        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full flex items-center justify-center bg-gradient-to-tr from-purple-600 to-indigo-600 shadow-lg text-white hover:scale-110 transition-transform"
+        title="Emma Voice Console"
       >
-        🎤
+        🤖
       </button>
-      
-      {/* Status Panel */}
-      {listening && (
-        <div className="w-80 p-4 rounded-xl bg-[#0b1020] text-white shadow-2xl border border-purple-500/30 animate-fadeIn">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-            <p className="text-xs font-medium text-purple-300">{status}</p>
+
+      {/* Voice Console Panel */}
+      {isOpen && (
+        <div className="fixed bottom-24 right-6 z-50 w-[360px] p-4 rounded-2xl shadow-2xl bg-[#0b1020] text-white border border-white/10">
+          <div className="flex justify-between items-center mb-2">
+            <span className="font-semibold text-lg">Emma Voice Console</span>
+            <div className="space-x-2">
+              <button
+                onClick={isListening ? () => stopListening("Manual stop") : startListening}
+                className={`px-3 py-1 rounded text-sm ${isListening ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
+              >
+                {isListening ? (uiLang === "ar" ? "إيقاف" : "Stop") : (uiLang === "ar" ? "تحدث" : "Speak")}
+              </button>
+              <button
+                onClick={closeConsole}
+                className="px-3 py-1 rounded text-sm bg-slate-700 hover:bg-slate-600"
+              >
+                {uiLang === "ar" ? "إغلاق" : "Close"}
+              </button>
+            </div>
           </div>
-          <div className="mt-2 p-2 rounded bg-black/30 max-h-24 overflow-y-auto">
-            <p className="text-sm text-gray-200 font-mono">{transcript || "..."}</p>
-          </div>
-          <div className="mt-3 text-xs text-gray-400 flex items-center gap-2">
-            <span>💡</span>
-            <span>
-              {uiLang === "ar" 
-                ? 'قل: "إمّا، ابدئي التحليل" أو "التقرير اليومي"' 
-                : 'Say: "Emma, start analysis" or "daily report"'}
-            </span>
+
+          <div className="text-xs opacity-70 mb-1">{status}</div>
+          <div className="bg-white/5 rounded-lg p-2 h-24 overflow-y-auto text-sm font-mono">{transcript || "..."}</div>
+          
+          <div className="mt-3 text-xs text-gray-400">
+            💡 {uiLang === "ar" 
+              ? 'جرب: "إمّا، ابدئي التحليل" أو "اقرئي التقرير"'
+              : 'Try: "Emma, start analysis" or "read the report"'}
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

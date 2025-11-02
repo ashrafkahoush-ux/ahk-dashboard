@@ -632,6 +632,42 @@ export default defineConfig({
           res.end(JSON.stringify({ success: false, message: 'Stream error' }))
         })
       })
+
+      // API: Get Report Text (for voice reading)
+      server.middlewares.use('/api/get-report-text', (req, res) => {
+        if (req.method !== 'GET') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'text/plain')
+          return res.end('Method Not Allowed')
+        }
+
+        try {
+          console.log('📖 Reading report text...')
+          
+          // Generate a concise spoken summary of the dashboard
+          const reportSummary = `
+            AHK Strategies Performance Report. 
+            Currently managing three active strategic projects. 
+            Q-VAN autonomous vehicle network showing strong feasibility with projected IRR of 28 percent. 
+            WOW MENA micro-mobility platform advancing through regulatory approval stages. 
+            EV Logistics infrastructure study identifying 2.4 billion dollar market opportunity. 
+            Overall portfolio health is positive with 67 percent task completion rate. 
+            Recommended next steps: accelerate OEM partnerships, expand pilot programs to additional cities, and initiate Series A fundraising conversations in Q1 2026.
+            Risk level is medium with primary concerns around regulatory uncertainty and capital requirements.
+          `.trim().replace(/\s+/g, ' ');
+          
+          res.statusCode = 200
+          res.setHeader('Content-Type', 'text/plain')
+          res.end(reportSummary)
+          
+          console.log('📖 REPORT TEXT SENT for TTS')
+        } catch (err) {
+          console.error('❌ Error generating report text:', err)
+          res.statusCode = 500
+          res.setHeader('Content-Type', 'text/plain')
+          res.end('Error generating report summary')
+        }
+      })
     }
   }
 })

@@ -8,7 +8,7 @@ export function stopSpeak() {
   speaking = false;
 }
 
-export function speak(text, { lang = "en-US", pitch = 1, rate = 1, volume = 1 } = {}) {
+export function speak(text, { lang = "en-US", pitch = 1, rate = 1, volume = 1, gender = "female" } = {}) {
   try {
     stopSpeak(); // cancel anything ongoing
     const utter = new SpeechSynthesisUtterance(text);
@@ -16,6 +16,15 @@ export function speak(text, { lang = "en-US", pitch = 1, rate = 1, volume = 1 } 
     utter.pitch = pitch;
     utter.rate = rate;
     utter.volume = volume;
+
+    // Select female voice if available
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v =>
+      v.lang.startsWith(lang.split("-")[0]) &&
+      (gender === "female" ? /(female|woman|féminin|femme)/i.test(v.name) : true)
+    );
+    if (preferred) utter.voice = preferred;
+
     utter.onstart = () => { speaking = true; };
     utter.onend = () => { speaking = false; };
     window.speechSynthesis.speak(utter);
