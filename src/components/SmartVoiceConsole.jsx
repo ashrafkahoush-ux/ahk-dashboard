@@ -12,6 +12,13 @@ import {
   generateRuleBasedResponse,
   getPreferredName 
 } from "../ai/memoryCore.mjs";
+import { 
+  logInteraction, 
+  summarizeLogs, 
+  updateStyleModel,
+  recallStyle 
+} from "../ai/EmmaCore.mjs";
+import { startSelfLearning } from "../ai/selfLearner.mjs";
 
 export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const [isListening, setIsListening] = useState(false);
@@ -34,6 +41,14 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
     console.log('🧠 Emma Ground Rules Loaded:', rules);
     console.log('📊 Total Rules:', rules.length, '(including self-learning Rules 11 & 12)');
     remember('sessionStart', `Emma initialized for ${new Date().toLocaleString()}`);
+    
+    // Start self-learning scheduler (30-minute cycles)
+    startSelfLearning(30);
+    console.log('🧠 Emma v5 Self-Learning Intelligence activated');
+    
+    // Log initial learning insights
+    const insights = summarizeLogs();
+    console.log('📊 Emma Learning Insights:', insights);
   }, []);
 
   // Greet user when opening console first time
@@ -105,8 +120,11 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         speak(enhanceResponse(enhancedMsg, { addPersonality: true }), { lang, gender: "female" });
         emmaMemory.recordCommand("run-analysis"); // Track command
         remember('command_executed', { command: 'run-analysis', timestamp: Date.now() });
+        logInteraction({ command: 'run-analysis', accepted: true, context: pageContext.page }); // v5 learning
         stopListening();
         onCommand?.("run-analysis");
+        // Periodic style update (10% chance)
+        if (Math.random() < 0.1) updateStyleModel();
       } 
       // Daily report request
       else if (/daily report/i.test(text) || /التقرير اليومي/i.test(text)) {
@@ -114,6 +132,7 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         const msg = uiLang === "ar" ? "هل ترغب بعرضه أم إرساله بالبريد؟" : "Would you like it displayed or emailed?";
         speak(enhanceResponse(msg), { lang, gender: "female" });
         emmaMemory.recordCommand("daily-report-request"); // Track command
+        logInteraction({ command: 'daily-report', accepted: true, context: pageContext.page }); // v5 learning
         setStatus("Awaiting choice");
       } 
       // Display choice
@@ -126,6 +145,7 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         emmaMemory.recordReportGeneration(); // Track report generation
         emmaMemory.setPreference('reportDelivery', 'display'); // Learn preference
         remember('report_generated', { type: 'display', timestamp: Date.now() });
+        logInteraction({ command: 'display-report', accepted: true, context: pageContext.page }); // v5 learning
         onCommand?.("display-report");
         // Show celebration after command completes
         setTimeout(() => {

@@ -96,6 +96,18 @@ export function usePageContext() {
           actions: [],
         };
         
+      case '/emma-learning':
+        return {
+          page: 'emma-learning',
+          title: 'Emma Learning Intelligence',
+          suggestions: [
+            'Want to see my self-learning progress?',
+            'Should I analyze your interaction patterns?',
+            'Curious how I adapt my communication style?',
+          ],
+          actions: [],
+        };
+        
       default:
         return {
           page: 'unknown',
