@@ -5,6 +5,7 @@ import { PHRASES, matches } from '../ai/lang'
 import { saveRoadmapTask } from '../ai/persist'
 import { askGemini } from '../ai/gemini'
 import { mapIntent, getConfidence } from '../ai/intentMapper'
+import { createTask, updateTaskStatus, appendNote, parseTaskCommand } from '../ai/taskAgent'
 
 // Lightweight imports from your data
 import projectsData from '../data/projects.json'
@@ -320,9 +321,114 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
         window.dispatchEvent(new CustomEvent('toggleTheme'));
         return say('Theme toggled.');
         
+      // 🪄 TASK MANAGEMENT (Mission #11)
+      case 'createTask': {
+        const parsed = parseTaskCommand(rawCommand);
+        say(`Creating task: ${parsed.title}. Please wait.`);
+        const result = await createTask(
+          parsed.title,
+          parsed.projectId,
+          parsed.priority,
+          parsed.dueDate
+        );
+        if (result.success) {
+          return say(`Task created successfully. ${parsed.title} added to ${parsed.projectId} project with ${parsed.priority} priority.`);
+        } else {
+          return say(`Failed to create task: ${result.error}`);
+        }
+      }
+      
+      case 'updateTask': {
+        // Extract task ID from command
+        const taskIdMatch = rawCommand.match(/T-\d+/i);
+        if (!taskIdMatch) {
+          return say('Please specify a task ID, like T-0001.');
+        }
+        const taskId = taskIdMatch[0];
+        // Determine new status from command
+        let status = 'in-progress';
+        if (rawCommand.toLowerCase().includes('done') || rawCommand.toLowerCase().includes('complete')) {
+          status = 'done';
+        } else if (rawCommand.toLowerCase().includes('pending') || rawCommand.toLowerCase().includes('todo')) {
+          status = 'pending';
+        } else if (rawCommand.toLowerCase().includes('blocked') || rawCommand.toLowerCase().includes('stuck')) {
+          status = 'blocked';
+        }
+        say(`Updating task ${taskId} to ${status}. Please wait.`);
+        const result = await updateTaskStatus(taskId, status);
+        if (result.success) {
+          return say(`Task ${taskId} updated to ${status}.`);
+        } else {
+          return say(`Failed to update task: ${result.error}`);
+        }
+      }
+      
+      case 'completeTask': {
+        const taskIdMatch = rawCommand.match(/T-\d+/i);
+        if (!taskIdMatch) {
+          return say('Please specify a task ID to complete, like T-0001.');
+        }
+        const taskId = taskIdMatch[0];
+        say(`Marking task ${taskId} as done. Please wait.`);
+        const result = await updateTaskStatus(taskId, 'done');
+        if (result.success) {
+          return say(`Great! Task ${taskId} marked as complete. Well done!`);
+        } else {
+          return say(`Failed to complete task: ${result.error}`);
+        }
+      }
+      
+      case 'addNote': {
+        const taskIdMatch = rawCommand.match(/T-\d+/i);
+        if (!taskIdMatch) {
+          return say('Please specify a task ID for the note, like T-0001.');
+        }
+        const taskId = taskIdMatch[0];
+        // Extract note text (everything after task ID)
+        const noteText = rawCommand.replace(/add note (to )?T-\d+/i, '').trim();
+        if (!noteText) {
+          return say('Please provide the note text.');
+        }
+        say(`Adding note to task ${taskId}. Please wait.`);
+        const result = await appendNote(taskId, noteText);
+        if (result.success) {
+          return say(`Note added to task ${taskId}.`);
+        } else {
+          return say(`Failed to add note: ${result.error}`);
+        }
+      }
+      
+      case 'updateRoadmap':
+        say('Refreshing roadmap data. Please wait.');
+        try {
+          const timestamp = Date.now();
+          const response = await fetch(`/roadmap.json?v=${timestamp}`);
+          const freshData = await response.json();
+          window.dispatchEvent(new CustomEvent('roadmapUpdated', { detail: freshData }));
+          return say(`Roadmap refreshed successfully. ${freshData.length} tasks loaded.`);
+        } catch (error) {
+          return say('Failed to refresh roadmap. Please try again.');
+        }
+      
+      case 'dailySummary': {
+        const tasks = roadmapData;
+        const pending = tasks.filter(t => t.status === 'pending').length;
+        const inProgress = tasks.filter(t => t.status === 'in-progress').length;
+        const completed = tasks.filter(t => t.status === 'done').length;
+        const today = new Date();
+        const overdue = tasks.filter(t => 
+          t.status !== 'done' && 
+          t.due && 
+          new Date(t.due) < today
+        ).length;
+        
+        const summary = `Daily task summary: You have ${pending} pending tasks, ${inProgress} in progress, and ${completed} completed. ${overdue > 0 ? `Alert: ${overdue} tasks are overdue.` : 'All tasks are on track.'}`;
+        return say(summary);
+      }
+        
       // Help
       case 'help':
-        return say('I understand natural commands like: run analysis, show me the fusion report, what should I do next, any risks, open dashboard, dark mode, and much more. Just speak naturally and I\'ll understand.');
+        return say('I understand natural commands like: run analysis, show me the fusion report, create task, update task, mark task done, daily summary, what should I do next, any risks, open dashboard, dark mode, and much more. Just speak naturally and I\'ll understand.');
         
       default:
         return handleFallback(rawCommand);

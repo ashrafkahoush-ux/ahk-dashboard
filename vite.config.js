@@ -14,7 +14,7 @@ export default defineConfig({
     middlewareMode: false,
     // Dev-only API endpoint for voice task persistence
     configureServer(server) {
-      // API: Save roadmap task
+      // API: Save roadmap task (Enhanced for AI Task Orchestration)
       server.middlewares.use('/api/save-roadmap', async (req, res) => {
         if (req.method !== 'POST') {
           res.statusCode = 405
@@ -24,14 +24,74 @@ export default defineConfig({
           let body = ''
           req.on('data', chunk => body += chunk)
           req.on('end', () => {
-            const { task } = JSON.parse(body || '{}')
+            const data = JSON.parse(body || '{}')
+            const { action = 'save', task, taskId, updates, note } = data
+            
+            const file = path.resolve(__dirname, 'src/data/roadmap.json')
+            const json = JSON.parse(fs.readFileSync(file, 'utf8'))
+            
+            // ACTION: CREATE - Add new task
+            if (action === 'create') {
+              if (!task || !task.id) {
+                res.statusCode = 400
+                return res.end('Bad task: missing id')
+              }
+              // Prevent duplicate ids
+              if (json.find(t => t.id === task.id)) {
+                res.setHeader('Content-Type', 'application/json')
+                return res.end(JSON.stringify({ ok: true, count: json.length, note: 'duplicate id ignored' }))
+              }
+              json.push(task)
+              fs.writeFileSync(file, JSON.stringify(json, null, 2))
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ ok: true, action: 'created', taskId: task.id, count: json.length }))
+            }
+            
+            // ACTION: UPDATE - Modify existing task
+            if (action === 'update') {
+              if (!taskId || !updates) {
+                res.statusCode = 400
+                return res.end('Bad request: missing taskId or updates')
+              }
+              const taskIndex = json.findIndex(t => t.id === taskId)
+              if (taskIndex === -1) {
+                res.statusCode = 404
+                return res.end(`Task not found: ${taskId}`)
+              }
+              // Merge updates into existing task
+              json[taskIndex] = { ...json[taskIndex], ...updates }
+              fs.writeFileSync(file, JSON.stringify(json, null, 2))
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ ok: true, action: 'updated', taskId }))
+            }
+            
+            // ACTION: APPEND - Add note to task
+            if (action === 'append') {
+              if (!taskId || !note) {
+                res.statusCode = 400
+                return res.end('Bad request: missing taskId or note')
+              }
+              const taskIndex = json.findIndex(t => t.id === taskId)
+              if (taskIndex === -1) {
+                res.statusCode = 404
+                return res.end(`Task not found: ${taskId}`)
+              }
+              // Initialize notes array if it doesn't exist
+              if (!json[taskIndex].notes) {
+                json[taskIndex].notes = []
+              }
+              json[taskIndex].notes.push(note)
+              json[taskIndex].updated_at = new Date().toISOString()
+              fs.writeFileSync(file, JSON.stringify(json, null, 2))
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ ok: true, action: 'appended', taskId, noteCount: json[taskIndex].notes.length }))
+            }
+            
+            // BACKWARD COMPATIBILITY: Default save action
             if (!task || !task.id) {
               res.statusCode = 400
               return res.end('Bad task')
             }
-            const file = path.resolve(__dirname, 'src/data/roadmap.json')
-            const json = JSON.parse(fs.readFileSync(file, 'utf8'))
-            // prevent duplicate ids
             if (json.find(t => t.id === task.id)) {
               res.setHeader('Content-Type', 'application/json')
               return res.end(JSON.stringify({ ok: true, count: json.length, note: 'duplicate id ignored' }))
@@ -43,6 +103,55 @@ export default defineConfig({
           })
         } catch (e) {
           console.error('API error:', e)
+          res.statusCode = 500
+          res.end('Internal Error')
+        }
+      })
+
+      // API: Log task action to task-log.json
+      server.middlewares.use('/api/log-task-action', async (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          return res.end('Method Not Allowed')
+        }
+        try {
+          let body = ''
+          req.on('data', chunk => body += chunk)
+          req.on('end', () => {
+            const logEntry = JSON.parse(body || '{}')
+            const file = path.resolve(__dirname, 'src/data/task-log.json')
+            const logs = JSON.parse(fs.readFileSync(file, 'utf8'))
+            logs.unshift(logEntry) // Add to beginning (most recent first)
+            // Keep only last 100 entries
+            if (logs.length > 100) {
+              logs.length = 100
+            }
+            fs.writeFileSync(file, JSON.stringify(logs, null, 2))
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ ok: true, logged: true }))
+          })
+        } catch (e) {
+          console.error('Task log error:', e)
+          res.statusCode = 500
+          res.end('Internal Error')
+        }
+      })
+
+      // API: Get recent task log entries
+      server.middlewares.use('/api/get-task-log', async (req, res) => {
+        if (req.method !== 'GET') {
+          res.statusCode = 405
+          return res.end('Method Not Allowed')
+        }
+        try {
+          const url = new URL(req.url, `http://${req.headers.host}`)
+          const limit = parseInt(url.searchParams.get('limit') || '5')
+          const file = path.resolve(__dirname, 'src/data/task-log.json')
+          const logs = JSON.parse(fs.readFileSync(file, 'utf8'))
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ logs: logs.slice(0, limit) }))
+        } catch (e) {
+          console.error('Task log read error:', e)
           res.statusCode = 500
           res.end('Internal Error')
         }

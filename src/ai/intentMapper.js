@@ -126,6 +126,37 @@ const intents = {
   stop: [
     'stop', 'cancel', 'pause', 'halt', 
     'enough', 'be quiet', 'silence', 'shut up'
+  ],
+  
+  // 🪄 TASK MANAGEMENT (Mission #11 - AI Task Orchestration)
+  createTask: [
+    'create task', 'add task', 'new task', 'make task',
+    'add milestone', 'create milestone', 'add todo', 'note this down'
+  ],
+  
+  updateTask: [
+    'update task', 'change task', 'modify task',
+    'edit task', 'update status', 'change status'
+  ],
+  
+  completeTask: [
+    'complete task', 'mark done', 'finish task',
+    'task done', 'mark complete', 'done with'
+  ],
+  
+  addNote: [
+    'add note', 'note to task', 'add comment',
+    'append note', 'add reminder', 'make note'
+  ],
+  
+  updateRoadmap: [
+    'update roadmap', 'refresh roadmap', 'sync roadmap',
+    'reload tasks', 'refresh plan', 'sync tasks'
+  ],
+  
+  dailySummary: [
+    'daily summary', 'summarize tasks', 'show summary',
+    'what pending', 'active tasks', 'task status'
   ]
 };
 

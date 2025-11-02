@@ -4,6 +4,7 @@ import { fetchGeminiAnalysis, testGeminiConnection } from '../api/geminiClient';
 import { runMultiAIAnalysis } from '../ai/orchestrator';
 import { preparePrompt } from '../ai/autoAgent.browser';
 import { saveRoadmapTask } from '../ai/persist';
+import { getRecentTaskLog } from '../ai/taskAgent';
 import { useProjects, useRoadmap } from '../utils/useData';
 import metricsData from '../data/metrics.json';
 
@@ -19,8 +20,18 @@ export default function AICoPilot() {
     return localStorage.getItem('ahk-auto-analyze') === 'true';
   });
   const [investorKPIs, setInvestorKPIs] = useState(null);
+  const [taskLog, setTaskLog] = useState([]);
   const projects = useProjects();
   const roadmap = useRoadmap();
+
+  async function loadTaskLog() {
+    try {
+      const logs = await getRecentTaskLog(5);
+      setTaskLog(logs);
+    } catch (error) {
+      console.error('Failed to load task log:', error);
+    }
+  }
 
   async function runAnalysis() {
     setLoading(true);
@@ -171,6 +182,11 @@ export default function AICoPilot() {
       } catch (e) {
         console.error('Failed to load saved fusion:', e);
       }
+    }
+
+    // Load task log when expanded
+    if (expanded) {
+      loadTaskLog();
     }
 
     // Listen for voice command trigger
@@ -419,6 +435,80 @@ export default function AICoPilot() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* 🪄 Task Assistant Section (Mission #11) */}
+          {taskLog.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <div style={{
+                fontSize: 13,
+                fontWeight: 'bold',
+                color: '#fbbf24',
+                marginBottom: 6,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}>
+                🪄 Task Assistant
+                <button
+                  onClick={() => loadTaskLog()}
+                  style={{
+                    background: 'transparent',
+                    color: '#fbbf24',
+                    border: '1px solid #fbbf24',
+                    padding: '2px 8px',
+                    borderRadius: 4,
+                    cursor: 'pointer',
+                    fontSize: 9,
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Refresh
+                </button>
+              </div>
+              <div style={{
+                background: '#1e1b4b',
+                padding: 10,
+                borderRadius: 8,
+                fontSize: 11,
+                maxHeight: 200,
+                overflowY: 'auto'
+              }}>
+                {taskLog.map((log, idx) => (
+                  <div key={idx} style={{
+                    marginBottom: 8,
+                    paddingBottom: 8,
+                    borderBottom: idx < taskLog.length - 1 ? '1px solid #312e81' : 'none'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: 4
+                    }}>
+                      <div style={{ color: '#c7d2fe', fontWeight: 'bold' }}>
+                        {log.taskId}
+                      </div>
+                      <div style={{
+                        fontSize: 9,
+                        color: log.result === 'success' ? '#10b981' : '#ef4444',
+                        fontWeight: 'bold'
+                      }}>
+                        {log.result === 'success' ? '✓ ' : '✗ '}
+                        {log.action}
+                      </div>
+                    </div>
+                    <div style={{ color: '#a5b4fc', fontSize: 10, marginBottom: 2 }}>
+                      {log.transcript}
+                    </div>
+                    <div style={{ color: '#6b7280', fontSize: 9 }}>
+                      {new Date(log.timestamp).toLocaleTimeString()}
+                      {log.ai_confidence && ` • ${log.ai_confidence}% confidence`}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
