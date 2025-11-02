@@ -100,22 +100,6 @@ const intents = {
     'stop autosync', 'auto sync off', 'disable auto sync'
   ],
   
-  // Theme Controls
-  darkMode: [
-    'dark mode', 'enable dark', 'turn on dark',
-    'dark theme', 'night mode', 'switch to dark'
-  ],
-  
-  lightMode: [
-    'light mode', 'enable light', 'turn on light',
-    'light theme', 'day mode', 'switch to light'
-  ],
-  
-  toggleTheme: [
-    'toggle theme', 'switch theme', 'change theme',
-    'flip theme', 'alternate theme'
-  ],
-  
   // Help & Support
   help: [
     'help', 'what can you do', 'commands',

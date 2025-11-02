@@ -38,21 +38,37 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
       speak('Speech recognition not supported on this browser.');
       return;
     }
-    if (active) return;
+    
+    // Stop any existing instance first
+    if (rec) {
+      try {
+        rec.stop();
+      } catch (e) {
+        console.log('Previous recognition cleanup:', e.message);
+      }
+    }
+    
+    // Create fresh recognition instance
     rec = new SpeechRec();
     const lang = detectLangFromToggle(currentLang);
     rec.lang = lang.code;
-    rec.continuous = true;
+    rec.continuous = false; // Changed to false for better control
     rec.interimResults = true;
+    
     rec.onstart = () => {
       active = true;
       onStatus?.('listening');
+      console.log('🎤 Voice recognition started');
     };
+    
     rec.onerror = (e) => {
+      console.error('Voice recognition error:', e.error);
       onStatus?.(`error: ${e.error}`);
       active = false;
     };
+    
     rec.onend = () => {
+      console.log('🎧 Voice recognition stopped');
       active = false;
       onStatus?.('idle');
     };
@@ -62,24 +78,29 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
       let interim = '';
       for (let i = evt.resultIndex; i < evt.results.length; i++) {
         const chunk = evt.results[i][0].transcript;
-        if (evt.results[i].isFinal) finalText += chunk + ' ';
-        else interim += chunk;
+        if (evt.results[i].isFinal) {
+          finalText += chunk + ' ';
+        } else {
+          interim += chunk;
+        }
       }
       onTranscript?.(finalText || interim);
-      // When user pauses, treat finalText as a command
+      
+      // When final result is received, process command
       if (finalText.trim().length > 0) {
         const cmd = finalText.trim();
+        console.log('🎤 Command received:', cmd);
         finalText = '';
         onCommand?.(cmd, { speak });
-        // Auto-stop recognition after command is received
-        setTimeout(() => {
-          if (rec && active) {
-            rec.stop();
-          }
-        }, 100);
       }
     };
-    rec.start();
+    
+    try {
+      rec.start();
+    } catch (e) {
+      console.error('Failed to start recognition:', e);
+      onStatus?.('Failed to start. Please try again.');
+    }
   }
 
   function stop() {
@@ -88,11 +109,18 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
     // Stop speech synthesis
     window.speechSynthesis.cancel();
     
-    // Stop recognition
-    if (rec && active) {
-      rec.stop();
-      active = false;
+    // Stop and cleanup recognition
+    if (rec) {
+      try {
+        rec.stop();
+      } catch (e) {
+        console.log('Recognition stop error (ignored):', e.message);
+      }
+      rec = null; // 🔑 Fully reset the instance
     }
+    
+    active = false;
+    onStatus?.('idle');
   }
 
   return { start, stop, speak, isActive: () => active };

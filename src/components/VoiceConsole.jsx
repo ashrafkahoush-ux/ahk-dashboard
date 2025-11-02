@@ -328,19 +328,6 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
         onToggleAutoSync?.(false);
         return say('Auto-sync disabled. Manual analysis only.');
         
-      // Theme
-      case 'darkMode':
-        window.dispatchEvent(new CustomEvent('setDarkMode'));
-        return say('Activating dark mode. Welcome to the cosmic dashboard experience.');
-        
-      case 'lightMode':
-        window.dispatchEvent(new CustomEvent('setLightMode'));
-        return say('Activating light mode. Switching to clean professional view.');
-        
-      case 'toggleTheme':
-        window.dispatchEvent(new CustomEvent('toggleTheme'));
-        return say('Theme toggled.');
-        
       // 🪄 TASK MANAGEMENT (Mission #11)
       case 'createTask': {
         const parsed = parseTaskCommand(rawCommand);
@@ -448,7 +435,7 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
         
       // Help
       case 'help':
-        return say('I understand natural commands like: run analysis, show me the fusion report, create task, update task, mark task done, daily summary, what should I do next, any risks, open dashboard, dark mode, and much more. Just speak naturally and I\'ll understand.');
+        return say('I understand natural commands like: run analysis, show me the fusion report, create task, update task, mark task done, daily summary, what should I do next, any risks, open dashboard, and much more. Just speak naturally and I\'ll understand.');
         
       default:
         return handleFallback(rawCommand);
@@ -478,7 +465,7 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
     }
 
     // FINAL FALLBACK - only speak once
-    say('I didn\'t quite catch that. Try saying things like: run analysis, show fusion report, what should I do next, any risks, open dashboard, or dark mode. Say "help" to hear all available commands.');
+    say('I didn\'t quite catch that. Try saying things like: run analysis, show fusion report, what should I do next, any risks, or open dashboard. Say "help" to hear all available commands.');
   }
 
   function start() {

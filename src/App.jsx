@@ -7,7 +7,6 @@ import AssetVault from './pages/AssetVault'
 import Partnerships from './pages/Partnerships'
 import VoiceConsole from './components/VoiceConsole'
 import AICoPilot from './components/AICoPilot'
-import ThemeToggle from './components/ThemeToggle'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { preparePrompt } from './ai/autoAgent.browser'
 import { useProjects, useRoadmap } from './utils/useData'
@@ -67,9 +66,6 @@ function AppContent() {
 
       {/* Global AI Co-Pilot - Available on all pages */}
       <AICoPilot />
-
-      {/* Global Theme Toggle - Dark/Light Mode */}
-      <ThemeToggle />
     </Layout>
   )
 }
