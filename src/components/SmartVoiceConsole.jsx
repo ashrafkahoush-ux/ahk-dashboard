@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { speak, stopSpeak, pickLang } from "../ai/speech";
 import { enhanceResponse, getGreeting, getConfirmation } from "../ai/responseEnhancer";
 import EmmaAvatar from "./EmmaAvatar";
+import emmaMemory from "../ai/emmaMemory";
 
 export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const [isListening, setIsListening] = useState(false);
@@ -18,8 +19,18 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   // Greet user when opening console first time
   useEffect(() => {
     if (isOpen && !hasGreeted.current) {
-      const greeting = getGreeting("Ashraf");
-      speak(enhanceResponse(greeting), { lang, gender: "female" });
+      emmaMemory.recordCheckIn(); // Track user interaction
+      
+      // Check for proactive suggestions
+      const suggestions = emmaMemory.getProactiveSuggestions();
+      if (suggestions.length > 0 && Math.random() > 0.5) {
+        // Show suggestion 50% of the time to avoid being annoying
+        const suggestion = suggestions[0];
+        speak(enhanceResponse(suggestion.message), { lang, gender: "female" });
+      } else {
+        const greeting = getGreeting("Ashraf");
+        speak(enhanceResponse(greeting), { lang, gender: "female" });
+      }
       hasGreeted.current = true;
     }
   }, [isOpen]);
@@ -55,6 +66,7 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         setEmmaState("thinking");
         const msg = uiLang === "ar" ? "جارٍ تشغيل التحليل" : "Starting analysis";
         speak(enhanceResponse(msg, { addPersonality: true }), { lang, gender: "female" });
+        emmaMemory.recordCommand("run-analysis"); // Track command
         stopListening();
         onCommand?.("run-analysis");
       } 
@@ -63,6 +75,7 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         setEmmaState("speaking");
         const msg = uiLang === "ar" ? "هل ترغب بعرضه أم إرساله بالبريد؟" : "Would you like it displayed or emailed?";
         speak(enhanceResponse(msg), { lang, gender: "female" });
+        emmaMemory.recordCommand("daily-report-request"); // Track command
         setStatus("Awaiting choice");
       } 
       // Display choice
@@ -70,6 +83,9 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         const confirm = getConfirmation();
         speak(enhanceResponse(confirm), { lang, gender: "female" });
         setEmmaState("working");
+        emmaMemory.recordCommand("display-report"); // Track command
+        emmaMemory.recordReportGeneration(); // Track report generation
+        setPreference('reportDelivery', 'display'); // Learn preference
         onCommand?.("display-report");
         // Show celebration after command completes
         setTimeout(() => {
@@ -87,6 +103,9 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         const confirm = getConfirmation();
         speak(enhanceResponse(confirm), { lang, gender: "female" });
         setEmmaState("working");
+        emmaMemory.recordCommand("email-report"); // Track command
+        emmaMemory.recordReportGeneration(); // Track report generation
+        emmaMemory.setPreference('reportDelivery', 'email'); // Learn preference
         onCommand?.("email-report");
         // Show celebration after command completes
         setTimeout(() => {
@@ -119,6 +138,7 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
       else if (/show reports|view archive/i.test(text) || /أظهر التقارير/i.test(text)) {
         const msg = uiLang === "ar" ? "فتح أرشيف التقارير" : "Opening reports archive";
         speak(enhanceResponse(msg), { lang, gender: "female" });
+        emmaMemory.recordCommand("show-reports"); // Track command
         onCommand?.("show-reports");
         stopListening();
       }

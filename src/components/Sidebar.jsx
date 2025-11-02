@@ -7,7 +7,8 @@ import {
   ChevronLeft,
   Zap,
   Handshake,
-  FileText
+  FileText,
+  Brain
 } from 'lucide-react'
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -18,6 +19,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     { path: '/assets', icon: FolderOpen, label: 'Asset Vault' },
     { path: '/partnerships', icon: Handshake, label: 'Partnerships' },
     { path: '/reports', icon: FileText, label: 'Reports Archive' },
+    { path: '/emma-insights', icon: Brain, label: 'Emma Insights' },
   ]
 
   return (
