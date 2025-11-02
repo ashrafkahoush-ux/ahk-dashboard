@@ -438,6 +438,12 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   async function handleFallback(raw) {
     const cmd = raw.toLowerCase();
     
+    // Don't speak if user has stopped
+    if (isStopped.current) {
+      console.log('🛑 Fallback blocked - user stopped');
+      return;
+    }
+    
     // Handle open-ended questions by asking Gemini AI
     if (cmd.includes('gemini') || cmd.includes('ask gemini') || cmd.includes('جيميني')) {
       try {
@@ -445,11 +451,13 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
         return say(response);
       } catch (error) {
         console.error('Gemini error:', error);
-        return say('Sorry, I had trouble reaching Gemini. Please try again.');
+        // Don't say anything on error - just log it
+        console.log('⚠️ Gemini unavailable - silently failing');
+        return;
       }
     }
 
-    // FINAL FALLBACK
+    // FINAL FALLBACK - only speak once
     say('I didn\'t quite catch that. Try saying things like: run analysis, show fusion report, what should I do next, any risks, open dashboard, or dark mode. Say "help" to hear all available commands.');
   }
 
