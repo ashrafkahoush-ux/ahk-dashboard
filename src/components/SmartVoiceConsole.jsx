@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { speak, stopSpeak, pickLang } from "../ai/speech";
 import { enhanceResponse, getGreeting, getConfirmation } from "../ai/responseEnhancer";
+import EmmaAvatar from "./EmmaAvatar";
 
 export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const [isListening, setIsListening] = useState(false);
@@ -8,6 +9,7 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const [status, setStatus] = useState("Idle");
   const [isOpen, setIsOpen] = useState(false);
   const [emmaState, setEmmaState] = useState("idle"); // idle, listening, thinking, speaking
+  const [showParticles, setShowParticles] = useState(false);
   const recRef = useRef(null);
   const timeoutRef = useRef(null);
   const lang = pickLang(uiLang);
@@ -67,14 +69,34 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
       else if (/display/i.test(text) || /عرض/i.test(text)) {
         const confirm = getConfirmation();
         speak(enhanceResponse(confirm), { lang, gender: "female" });
+        setEmmaState("working");
         onCommand?.("display-report");
+        // Show celebration after command completes
+        setTimeout(() => {
+          setEmmaState("happy");
+          setShowParticles(true);
+          setTimeout(() => {
+            setShowParticles(false);
+            setEmmaState("idle");
+          }, 2000);
+        }, 1500);
         stopListening();
       } 
       // Email choice
       else if (/email/i.test(text) || /بريد/i.test(text)) {
         const confirm = getConfirmation();
         speak(enhanceResponse(confirm), { lang, gender: "female" });
+        setEmmaState("working");
         onCommand?.("email-report");
+        // Show celebration after command completes
+        setTimeout(() => {
+          setEmmaState("happy");
+          setShowParticles(true);
+          setTimeout(() => {
+            setShowParticles(false);
+            setEmmaState("idle");
+          }, 2000);
+        }, 1500);
         stopListening();
       } 
       // Risk analysis
@@ -160,13 +182,13 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
 
   return (
     <>
-      {/* Emma Bot Button */}
+      {/* Emma Bot Button with Avatar */}
       <button
         onClick={() => setIsOpen(prev => !prev)}
-        className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full flex items-center justify-center bg-gradient-to-tr from-purple-600 to-indigo-600 shadow-lg text-white hover:scale-110 transition-transform"
+        className="fixed bottom-6 right-6 z-50 hover:scale-110 transition-transform"
         title="Emma Voice Console"
       >
-        🤖
+        <EmmaAvatar mood={emmaState} showParticles={showParticles} />
       </button>
 
       {/* Voice Console Panel */}
