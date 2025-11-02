@@ -9,6 +9,7 @@ import { getRecentTaskLog } from '../ai/taskAgent';
 import { useProjects, useRoadmap } from '../utils/useData';
 import metricsData from '../data/metrics.json';
 import SmartVoiceConsole from './SmartVoiceConsole';
+import CommandPad from './CommandPad';
 import EmmaQuickActions from './EmmaQuickActions';
 import { speak, pickLang } from '../ai/speech';
 import ReportsManager from '../utils/reportsStorage';
@@ -1197,6 +1198,13 @@ export default function AICoPilot() {
       
       {/* Smart Voice Console v3 - Conversational Emma */}
       <SmartVoiceConsole onCommand={handleVoiceCommand} uiLang={currentLanguage} />
+      
+      {/* Manual Command Pad - Pilot fallback */}
+      {expanded && (
+        <div className="fixed bottom-24 right-6 w-96 z-40">
+          <CommandPad />
+        </div>
+      )}
       
       {/* Emma Quick Actions Bar - One-tap shortcuts */}
       <EmmaQuickActions onAction={handleVoiceCommand} isVisible={!expanded} />

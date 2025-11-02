@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pilot:germex": "curl -X POST http://localhost:3000/api/fusion/analyze -H \"Content-Type: application/json\" -d \"{\\\"client_id\\\":\\\"germex\\\"}\" && curl -X POST http://localhost:3000/api/reports/generate -H \"Content-Type: application/json\" -d \"{\\\"client_id\\\":\\\"germex\\\",\\\"deliver\\\":\\\"display\\\"}\"",
+    "pilot:shiftev": "curl -X POST http://localhost:3000/api/fusion/analyze -H \"Content-Type: application/json\" -d \"{\\\"client_id\\\":\\\"shift-ev-egypt\\\"}\" && curl -X POST http://localhost:3000/api/reports/generate -H \"Content-Type: application/json\" -d \"{\\\"client_id\\\":\\\"shift-ev-egypt\\\",\\\"deliver\\\":\\\"display\\\"}\""
   },
   "dependencies": {
     "lucide-react": "^0.445.0",

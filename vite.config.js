@@ -668,9 +668,439 @@ export default defineConfig({
           res.end('Error generating report summary')
         }
       })
+
+      // ========================================================
+      // PILOT ENDPOINTS - Client Layer + Fusion + Reports
+      // ========================================================
+
+      // API: Register Client
+      server.middlewares.use('/api/register-client', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
+        }
+
+        let body = ''
+        req.on('data', chunk => { body += chunk })
+        req.on('end', () => {
+          try {
+            console.log('[PILOT] Register client request')
+            const clientData = JSON.parse(body || '{}')
+            const { id, name, industry, country, website, notes, status } = clientData
+
+            if (!id || !name) {
+              res.statusCode = 400
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ success: false, error: 'Missing required fields: id, name' }))
+            }
+
+            const file = path.resolve(__dirname, 'src/data/clients.json')
+            let clients = JSON.parse(fs.readFileSync(file, 'utf8'))
+
+            // Check if client exists
+            const existingIndex = clients.findIndex(c => c.id === id)
+            
+            const client = {
+              id,
+              name,
+              industry: industry || 'Not specified',
+              country: country || 'Unknown',
+              website: website || '',
+              notes: notes || '',
+              status: status || 'prospect',
+              created_at: existingIndex >= 0 ? clients[existingIndex].created_at : new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+
+            if (existingIndex >= 0) {
+              // Update existing
+              clients[existingIndex] = client
+              console.log('[PILOT] Client updated:', id)
+            } else {
+              // Add new
+              clients.push(client)
+              console.log('[PILOT] Client created:', id)
+            }
+
+            fs.writeFileSync(file, JSON.stringify(clients, null, 2))
+
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: true, client }))
+          } catch (err) {
+            console.error('[PILOT] Register client error:', err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, error: err.message }))
+          }
+        })
+      })
+
+      // API: Attach Document
+      server.middlewares.use('/api/attach-doc', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
+        }
+
+        let body = ''
+        req.on('data', chunk => { body += chunk })
+        req.on('end', () => {
+          try {
+            console.log('[PILOT] Attach document request')
+            const { client_id, title, type, path: docPath, tags } = JSON.parse(body || '{}')
+
+            if (!client_id || !title) {
+              res.statusCode = 400
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ success: false, error: 'Missing required fields: client_id, title' }))
+            }
+
+            const file = path.resolve(__dirname, 'src/data/client_docs_index.json')
+            let docs = JSON.parse(fs.readFileSync(file, 'utf8'))
+
+            // Check for duplicate
+            const exists = docs.find(d => d.client_id === client_id && d.title === title)
+            if (exists) {
+              res.statusCode = 200
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ success: true, doc: exists, note: 'Document already exists' }))
+            }
+
+            const doc = {
+              client_id,
+              title,
+              type: type || 'document',
+              path: docPath || '',
+              tags: tags || [],
+              added_at: new Date().toISOString()
+            }
+
+            docs.push(doc)
+            fs.writeFileSync(file, JSON.stringify(docs, null, 2))
+
+            console.log('[PILOT] Document attached:', title)
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: true, doc }))
+          } catch (err) {
+            console.error('[PILOT] Attach document error:', err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, error: err.message }))
+          }
+        })
+      })
+
+      // API: Fusion Analysis
+      server.middlewares.use('/api/fusion/analyze', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
+        }
+
+        let body = ''
+        req.on('data', chunk => { body += chunk })
+        req.on('end', async () => {
+          try {
+            console.log('[PILOT] Fusion analysis request')
+            const { client_id, scope = 'general', top_n = 5 } = JSON.parse(body || '{}')
+
+            if (!client_id) {
+              res.statusCode = 400
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ success: false, error: 'Missing required field: client_id' }))
+            }
+
+            // Load client and docs
+            const clientsFile = path.resolve(__dirname, 'src/data/clients.json')
+            const docsFile = path.resolve(__dirname, 'src/data/client_docs_index.json')
+            
+            const clients = JSON.parse(fs.readFileSync(clientsFile, 'utf8'))
+            const allDocs = JSON.parse(fs.readFileSync(docsFile, 'utf8'))
+
+            const client = clients.find(c => c.id === client_id)
+            if (!client) {
+              res.statusCode = 404
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ success: false, error: `Client not found: ${client_id}` }))
+            }
+
+            const docs = allDocs.filter(d => d.client_id === client_id)
+
+            console.log('[PILOT] Running fusion for:', client.name, '| Docs:', docs.length, '| Scope:', scope)
+
+            // Import and run fusion (dynamic import for ESM)
+            const fusionModule = await import('./src/ai/fusionRunner.js')
+            const result = await fusionModule.runFusionAnalysis({ client, docs, scope, top_n })
+
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(result))
+          } catch (err) {
+            console.error('[PILOT] Fusion analysis error:', err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, error: err.message }))
+          }
+        })
+      })
+
+      // API: Generate Report
+      server.middlewares.use('/api/reports/generate', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
+        }
+
+        let body = ''
+        req.on('data', chunk => { body += chunk })
+        req.on('end', async () => {
+          try {
+            console.log('[PILOT] Report generation request')
+            const { client_id, template = 'executive', deliver = 'display' } = JSON.parse(body || '{}')
+
+            if (!client_id) {
+              res.statusCode = 400
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ success: false, error: 'Missing required field: client_id' }))
+            }
+
+            // Load client
+            const clientsFile = path.resolve(__dirname, 'src/data/clients.json')
+            const clients = JSON.parse(fs.readFileSync(clientsFile, 'utf8'))
+            const client = clients.find(c => c.id === client_id)
+
+            if (!client) {
+              res.statusCode = 404
+              res.setHeader('Content-Type', 'application/json')
+              return res.end(JSON.stringify({ success: false, error: `Client not found: ${client_id}` }))
+            }
+
+            // Run fusion analysis first (get latest insights)
+            const docsFile = path.resolve(__dirname, 'src/data/client_docs_index.json')
+            const allDocs = JSON.parse(fs.readFileSync(docsFile, 'utf8'))
+            const docs = allDocs.filter(d => d.client_id === client_id)
+
+            const fusionModule = await import('./src/ai/fusionRunner.js')
+            const fusionResult = await fusionModule.runFusionAnalysis({ 
+              client, 
+              docs, 
+              scope: template === 'investor' ? 'investor' : template === 'risk' ? 'risk' : 'general',
+              top_n: 5 
+            })
+
+            if (!fusionResult.success) {
+              throw new Error('Fusion analysis failed: ' + fusionResult.error)
+            }
+
+            // Generate HTML report
+            const timestamp = Date.now()
+            const filename = `${client_id}-${template}-${timestamp}.html`
+            const reportPath = path.resolve(__dirname, `src/data/reports/${filename}`)
+
+            const htmlContent = generateHTMLReport(client, fusionResult.fusion, template)
+            fs.writeFileSync(reportPath, htmlContent)
+
+            // Generate JSON summary
+            const summaryPath = path.resolve(__dirname, `src/data/reports/${client_id}-${template}-${timestamp}.json`)
+            const summary = generateReportSummary(client, fusionResult.fusion, template)
+            fs.writeFileSync(summaryPath, JSON.stringify(summary, null, 2))
+
+            console.log('[PILOT] Report generated:', filename)
+
+            // Handle delivery
+            if (deliver === 'email') {
+              // Call email endpoint
+              await fetch(`http://localhost:${server.config.server.port}/api/reports/email`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: reportPath })
+              })
+            }
+
+            const response = {
+              success: true,
+              url: `/src/data/reports/${filename}`,
+              summary: summary.executiveSummary,
+              filename,
+              template,
+              client: client.name,
+              timestamp: new Date().toISOString()
+            }
+
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify(response))
+          } catch (err) {
+            console.error('[PILOT] Report generation error:', err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, error: err.message }))
+          }
+        })
+      })
+
+      // API: Email Report
+      server.middlewares.use('/api/reports/email', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
+        }
+
+        let body = ''
+        req.on('data', chunk => { body += chunk })
+        req.on('end', () => {
+          try {
+            console.log('[PILOT] Email report request')
+            const { path: reportPath, to = 'ashraf@ahkstrategies.com' } = JSON.parse(body || '{}')
+
+            // STUB: Email transport not implemented yet
+            console.log('[PILOT] Email stub - would send:', reportPath, 'to:', to)
+
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ 
+              success: true, 
+              message: 'Report email queued (stub)',
+              recipient: to,
+              timestamp: new Date().toISOString()
+            }))
+          } catch (err) {
+            console.error('[PILOT] Email report error:', err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ success: false, error: err.message }))
+          }
+        })
+      })
     }
   }
 })
+
+/**
+ * Generate HTML report from fusion results
+ */
+function generateHTMLReport(client, fusion, template) {
+  const now = new Date().toLocaleString()
+  
+  let html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>${template.toUpperCase()} Report - ${client.name}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+    .container { max-width: 900px; margin: 0 auto; background: white; padding: 40px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    h1 { color: #1e40af; border-bottom: 3px solid #3b82f6; padding-bottom: 10px; }
+    h2 { color: #374151; margin-top: 30px; }
+    .meta { color: #6b7280; font-size: 14px; margin-bottom: 20px; }
+    .section { margin: 20px 0; }
+    .insight, .risk, .opportunity { padding: 15px; margin: 10px 0; border-left: 4px solid; }
+    .insight { background: #dbeafe; border-color: #3b82f6; }
+    .risk { background: #fee2e2; border-color: #ef4444; }
+    .opportunity { background: #d1fae5; border-color: #10b981; }
+    .confidence { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: bold; }
+    .confidence-high { background: #10b981; color: white; }
+    .confidence-medium { background: #f59e0b; color: white; }
+    .confidence-low { background: #6b7280; color: white; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>${template.toUpperCase()} Analysis Report</h1>
+    <div class="meta">
+      <strong>Client:</strong> ${client.name} (${client.industry})<br>
+      <strong>Country:</strong> ${client.country}<br>
+      <strong>Generated:</strong> ${now}<br>
+      <strong>AI Providers:</strong> ${fusion.providers.join(', ')}<br>
+      <strong>Consensus:</strong> ${fusion.consensus.strength} (${fusion.consensus.provider_count} sources)
+    </div>
+
+    <div class="section">
+      <h2>Key Insights</h2>
+      ${fusion.insights.map(item => `
+        <div class="insight">
+          <strong>${item.insight}</strong>
+          <span class="confidence confidence-${item.confidence}">${item.confidence.toUpperCase()}</span>
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="section">
+      <h2>Risk Analysis</h2>
+      ${fusion.risks.map(risk => `
+        <div class="risk">
+          <strong>[${risk.type.toUpperCase()}] ${risk.description}</strong><br>
+          <em>Severity: ${risk.severity}</em><br>
+          Mitigation: ${risk.mitigation}
+        </div>
+      `).join('')}
+    </div>
+
+    <div class="section">
+      <h2>Growth Opportunities</h2>
+      ${fusion.growth_ops.map(opp => `
+        <div class="opportunity">
+          <strong>[${opp.category.toUpperCase()}] ${opp.description}</strong><br>
+          <em>Potential: ${opp.potential} | Timeframe: ${opp.timeframe}</em>
+        </div>
+      `).join('')}
+    </div>
+
+    ${fusion.investor_angles && fusion.investor_angles.length > 0 ? `
+      <div class="section">
+        <h2>Investor Perspective</h2>
+        ${fusion.investor_angles.map(angle => `
+          <div class="insight">
+            <strong>${angle.aspect}:</strong> ${angle.analysis}
+            <span class="confidence confidence-${angle.confidence || 'medium'}">${(angle.confidence || 'medium').toUpperCase()}</span>
+          </div>
+        `).join('')}
+      </div>
+    ` : ''}
+
+    <div class="meta" style="margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 20px;">
+      <strong>AHK Strategies</strong> | Confidential & Proprietary<br>
+      Generated by Emma AI Fusion Engine
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+  
+  return html
+}
+
+/**
+ * Generate report summary for JSON storage
+ */
+function generateReportSummary(client, fusion, template) {
+  const topInsights = fusion.insights.slice(0, 3).map(i => i.insight)
+  const topRisks = fusion.risks.slice(0, 3).map(r => r.description)
+  const topOpps = fusion.growth_ops.slice(0, 3).map(o => o.description)
+  
+  return {
+    client: client.name,
+    client_id: client.id,
+    template,
+    generated_at: new Date().toISOString(),
+    executiveSummary: `Analysis for ${client.name} (${client.industry}) reveals ${fusion.insights.length} key insights, ${fusion.risks.length} risk factors, and ${fusion.growth_ops.length} growth opportunities. Consensus strength is ${fusion.consensus.strength} based on ${fusion.consensus.provider_count} AI providers.`,
+    highlights: {
+      insights: topInsights,
+      risks: topRisks,
+      opportunities: topOpps
+    },
+    consensus: fusion.consensus,
+    providers: fusion.providers
+  }
+}
 
 /**
  * Parse HTML report for financial KPIs

@@ -203,6 +203,40 @@ export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
         onCommand?.("show-reports");
         stopListening();
       }
+      // PILOT: Project-scoped fusion commands
+      else if (/analyze|fusion/i.test(text) && /germex/i.test(text)) {
+        setEmmaState("thinking");
+        const msg = "Running fusion analysis for Germex";
+        speak(enhanceResponse(msg), { lang, gender: "female" });
+        onCommand?.("fusion-germex");
+        logInteraction({ command: 'fusion-germex', accepted: true, context: 'voice' });
+        stopListening();
+      }
+      else if (/analyze|fusion/i.test(text) && /shift.*ev/i.test(text)) {
+        setEmmaState("thinking");
+        const msg = "Running fusion analysis for Shift EV Egypt";
+        speak(enhanceResponse(msg), { lang, gender: "female" });
+        onCommand?.("fusion-shiftev");
+        logInteraction({ command: 'fusion-shiftev', accepted: true, context: 'voice' });
+        stopListening();
+      }
+      // PILOT: Report generation commands
+      else if (/investor report/i.test(text) && /germex/i.test(text)) {
+        setEmmaState("working");
+        const msg = "Generating investor report for Germex";
+        speak(enhanceResponse(msg), { lang, gender: "female" });
+        onCommand?.("report-germex-investor");
+        logInteraction({ command: 'report-germex-investor', accepted: true, context: 'voice' });
+        stopListening();
+      }
+      else if (/risk.*analysis/i.test(text) && /shift.*ev/i.test(text)) {
+        setEmmaState("thinking");
+        const msg = "Running risk analysis for Shift EV Egypt";
+        speak(enhanceResponse(msg), { lang, gender: "female" });
+        onCommand?.("risk-shiftev");
+        logInteraction({ command: 'risk-shiftev', accepted: true, context: 'voice' });
+        stopListening();
+      }
     };
 
     rec.onerror = (e) => {

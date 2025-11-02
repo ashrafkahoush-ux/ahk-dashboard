@@ -1,21 +1,46 @@
-{
-  "version": "2025-11-01",
-  "groups": [
-    {
-      "sector": "Automotive Assembler",
-      "country": "Egypt",
-      "items": [
-        { "name": "Ghabbour Auto", "website": "https://www.gbauto.com/", "source": "SRC-GROK-CLIENTS" },
-        { "name": "Al-Mansour Automotive", "website": "https://almansour.com.eg/", "source": "SRC-GROK-CLIENTS" }
-      ]
-    },
-    {
-      "sector": "Logistics",
-      "country": "Egypt",
-      "items": [
-        { "name": "Aramex Egypt", "website": "https://www.aramex.com/eg", "source": "SRC-GROK-CLIENTS" },
-        { "name": "DHL Egypt", "website": "https://www.dhl.com/eg-en", "source": "SRC-GROK-CLIENTS" }
-      ]
-    }
-  ]
-}
+[
+  {
+    "id": "germex",
+    "name": "Germex",
+    "industry": "Marble, Ceramic & Stone",
+    "country": "Egypt",
+    "website": "https://www.germex.example",
+    "notes": "Pilot/reference customer",
+    "status": "pilot",
+    "created_at": "2025-11-02T00:00:00Z",
+    "updated_at": "2025-11-02T00:00:00Z"
+  },
+  {
+    "id": "shift-ev-egypt",
+    "name": "Shift EV Egypt",
+    "industry": "EV Retrofit & Energy",
+    "country": "Egypt",
+    "website": "https://www.shiftev.co",
+    "notes": "Target for partnership discovery",
+    "status": "target",
+    "created_at": "2025-11-02T00:00:00Z",
+    "updated_at": "2025-11-02T00:00:00Z"
+  },
+  {
+    "id": "ghabbour-auto",
+    "name": "Ghabbour Auto",
+    "industry": "Automotive Assembler",
+    "country": "Egypt",
+    "website": "https://www.gbauto.com/",
+    "notes": "Existing prospect from Grok analysis",
+    "status": "prospect",
+    "created_at": "2025-11-01T00:00:00Z",
+    "updated_at": "2025-11-02T00:00:00Z"
+  },
+  {
+    "id": "al-mansour-automotive",
+    "name": "Al-Mansour Automotive",
+    "industry": "Automotive Assembler",
+    "country": "Egypt",
+    "website": "https://almansour.com.eg/",
+    "notes": "Existing prospect from Grok analysis",
+    "status": "prospect",
+    "created_at": "2025-11-01T00:00:00Z",
+    "updated_at": "2025-11-02T00:00:00Z"
+  }
+]

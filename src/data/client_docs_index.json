@@ -1,0 +1,18 @@
+[
+  {
+    "client_id": "germex",
+    "title": "African Continental Market Study 2025",
+    "type": "pdf",
+    "path": "/data/clients/germex/African_Continental_Market_Study_2025.pdf",
+    "tags": ["macro", "africa", "demand", "exports"],
+    "added_at": "2025-11-02T00:00:00Z"
+  },
+  {
+    "client_id": "shift-ev-egypt",
+    "title": "Shift EV Brand & Website Analysis",
+    "type": "web",
+    "path": "https://www.shiftev.co",
+    "tags": ["website", "brand", "ev", "retrofit"],
+    "added_at": "2025-11-02T00:00:00Z"
+  }
+]
