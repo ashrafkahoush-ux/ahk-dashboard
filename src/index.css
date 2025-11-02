@@ -1,9 +1,9 @@
+/* Emma Avatar Animations - must precede @tailwind directives */
+@import url('./styles/emma-animations.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Emma Avatar Animations - must be after Tailwind */
-@import url('./styles/emma-animations.css');
 
 /* 🌌 Global Theme Transition System */
 * {

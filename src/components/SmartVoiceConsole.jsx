@@ -11,7 +11,7 @@ import {
   remember, 
   generateRuleBasedResponse,
   getPreferredName 
-} from "../ai/memoryCore";
+} from "../ai/memoryCore.mjs";
 
 export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
   const [isListening, setIsListening] = useState(false);
