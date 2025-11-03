@@ -14,11 +14,10 @@ import {
 } from 'lucide-react';
 import {
   getLearningInsights,
-  forceLearningCycle,
   exportLearningData,
   resetLearning
 } from '../ai/EmmaCore.mjs';
-import { startSelfLearning, stopSelfLearning, isSelfLearningActive } from '../ai/selfLearner.mjs';
+import { startSelfLearning, stopSelfLearning, isSelfLearningActive, forceLearningCycle } from '../ai/selfLearner.mjs';
 import GoogleDriveSync from './GoogleDriveSync';
 
 export default function EmmaLearning() {
