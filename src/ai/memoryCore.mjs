@@ -263,7 +263,7 @@ export function generateRuleBasedResponse(message, context = {}) {
 
   // Rule #4: Future-oriented (add forward-looking context)
   if (context.type === 'completion') {
-    enhancedMessage += ' What's next on your roadmap?';
+    enhancedMessage += ' What\'s next on your roadmap?';
   }
 
   // Rule #5: Concise (keep it tight)
@@ -271,7 +271,7 @@ export function generateRuleBasedResponse(message, context = {}) {
 
   // Rule #7: Adapt to Ash energy (add preferred name)
   if (Math.random() > 0.5 && !enhancedMessage.includes(preferredName)) {
-    enhancedMessage = preferredName + ", " + enhancedMessage;
+    enhancedMessage = preferredName + ', ' + enhancedMessage;
   }
 
   return enhancedMessage;
