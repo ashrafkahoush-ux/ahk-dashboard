@@ -269,9 +269,9 @@ export function generateRuleBasedResponse(message, context = {}) {
   // Rule #5: Concise (keep it tight)
   enhancedMessage = enhancedMessage.trim();
 
-  // Rule #7: Adapt to Ash's energy (add preferred name)
+  // Rule #7: Adapt to Ash energy (add preferred name)
   if (Math.random() > 0.5 && !enhancedMessage.includes(preferredName)) {
-    enhancedMessage = preferredName + ', ' + enhancedMessage;
+    enhancedMessage = preferredName + ", " + enhancedMessage;
   }
 
   return enhancedMessage;
@@ -499,3 +499,4 @@ export function applySelfLearningRules() {
     timestamp: new Date().toISOString()
   };
 }
+

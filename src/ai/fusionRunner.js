@@ -3,7 +3,7 @@
  * Coordinates Gemini, Grok, ChatGPT for consensus-driven insights
  */
 
-import { generateContent } from './gemini.browser.js';
+import { fetchGeminiAnalysis } from '../api/geminiClient.js';
 
 /**
  * Run fusion analysis for a client
@@ -148,7 +148,10 @@ Format as JSON with keys: investor_angles[] (each with: aspect, analysis, confid
  */
 async function callGemini(prompt) {
   try {
-    const response = await generateContent(prompt);
+    const response = await fetchGeminiAnalysis(prompt, { 
+      temperature: 0.7,
+      format: 'json'
+    });
     return parseAIResponse(response, 'gemini');
   } catch (error) {
     console.warn('[PILOT] Gemini call failed:', error.message);
