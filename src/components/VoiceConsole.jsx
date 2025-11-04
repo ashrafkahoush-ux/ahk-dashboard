@@ -488,13 +488,6 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
     agentRef.current?.start()
   }
 
-  function stop() {
-    window.speechSynthesis.cancel() // Stop all speech
-    agentRef.current?.stop()
-    setStatus('idle')
-    setReply('')
-  }
-
   return (
     <>
       {/* Floating Mic Button */}

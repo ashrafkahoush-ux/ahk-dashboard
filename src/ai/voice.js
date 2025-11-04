@@ -24,27 +24,57 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
       const lang = detectLangFromToggle(currentLang);
       const u = new SpeechSynthesisUtterance(text);
       u.lang = lang.tts;
-      u.rate = 1.02;
-      u.pitch = 1.0;
+      u.rate = 1.0;
+      u.pitch = 1.1; // Slightly higher pitch for female voice
       
       // 🎤 Set female voice (matches Emma's tone from ChatGPT)
-      const voices = window.speechSynthesis.getVoices();
-      const femaleVoice = voices.find(v => 
-        (v.name.includes('Female') || 
-         v.name.includes('Samantha') || 
-         v.name.includes('Karen') ||
-         v.name.includes('Victoria') ||
-         v.name.includes('Zira') ||
-         v.lang.startsWith('en')) && 
-        v.name.includes('Female')
-      ) || voices.find(v => v.lang.startsWith('en') && !v.name.includes('Male'));
+      // Wait for voices to load if they haven't yet
+      const setVoiceAndSpeak = () => {
+        const voices = window.speechSynthesis.getVoices();
+        
+        if (voices.length === 0) {
+          // Voices not loaded yet, wait for them
+          window.speechSynthesis.onvoiceschanged = () => {
+            setVoiceAndSpeak();
+          };
+          return;
+        }
+        
+        // Priority order: Female voices > Samantha > Microsoft voices
+        const femaleVoice = voices.find(v => 
+          (v.name.toLowerCase().includes('female') ||
+           v.name.toLowerCase().includes('samantha') ||
+           v.name.toLowerCase().includes('zira') ||
+           v.name.toLowerCase().includes('karen') ||
+           v.name.toLowerCase().includes('victoria') ||
+           v.name.toLowerCase().includes('susan') ||
+           v.name.toLowerCase().includes('allison') ||
+           v.name.toLowerCase().includes('ava') ||
+           v.name.toLowerCase().includes('serena')) &&
+          !v.name.toLowerCase().includes('male')
+        );
+        
+        if (femaleVoice) {
+          u.voice = femaleVoice;
+          console.log('🎙️ Using female voice:', femaleVoice.name);
+        } else {
+          // Fallback: try to find any English voice that's not explicitly male
+          const englishVoice = voices.find(v => 
+            v.lang.startsWith('en') && 
+            !v.name.toLowerCase().includes('male')
+          );
+          if (englishVoice) {
+            u.voice = englishVoice;
+            console.log('🎙️ Using voice:', englishVoice.name);
+          } else {
+            console.log('🎙️ Using default voice (no female voice found)');
+          }
+        }
+        
+        window.speechSynthesis.speak(u);
+      };
       
-      if (femaleVoice) {
-        u.voice = femaleVoice;
-        console.log('🎙️ Using female voice:', femaleVoice.name);
-      }
-      
-      window.speechSynthesis.speak(u);
+      setVoiceAndSpeak();
     } catch (e) {
       console.error('TTS error:', e);
     }
