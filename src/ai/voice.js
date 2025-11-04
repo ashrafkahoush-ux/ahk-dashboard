@@ -26,6 +26,24 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
       u.lang = lang.tts;
       u.rate = 1.02;
       u.pitch = 1.0;
+      
+      // 🎤 Set female voice (matches Emma's tone from ChatGPT)
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(v => 
+        (v.name.includes('Female') || 
+         v.name.includes('Samantha') || 
+         v.name.includes('Karen') ||
+         v.name.includes('Victoria') ||
+         v.name.includes('Zira') ||
+         v.lang.startsWith('en')) && 
+        v.name.includes('Female')
+      ) || voices.find(v => v.lang.startsWith('en') && !v.name.includes('Male'));
+      
+      if (femaleVoice) {
+        u.voice = femaleVoice;
+        console.log('🎙️ Using female voice:', femaleVoice.name);
+      }
+      
       window.speechSynthesis.speak(u);
     } catch (e) {
       console.error('TTS error:', e);
@@ -86,12 +104,22 @@ export function createVoiceAgent({ onCommand, onStatus, onTranscript }) {
       }
       onTranscript?.(finalText || interim);
       
-      // When final result is received, process command
+      // When final result is received, check for wake phrase or process command
       if (finalText.trim().length > 0) {
-        const cmd = finalText.trim();
-        console.log('🎤 Command received:', cmd);
+        const cmd = finalText.trim().toLowerCase();
+        
+        // 🎤 Wake phrase detection: "Emma, start analysis"
+        if (cmd.includes('emma') && (cmd.includes('start analysis') || cmd.includes('analyze'))) {
+          console.log('🎯 Wake phrase detected:', cmd);
+          speak('Synchronization complete, Ash. Ready for analysis.');
+          finalText = '';
+          return;
+        }
+        
+        console.log('🎤 Command received:', finalText.trim());
+        const commandText = finalText.trim();
         finalText = '';
-        onCommand?.(cmd, { speak });
+        onCommand?.(commandText, { speak });
       }
     };
     

@@ -64,13 +64,14 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
   function resetInactivityTimer() {
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current)
     inactivityTimer.current = setTimeout(() => {
-      // Auto-close console after 3 seconds of inactivity
-      if (status === 'idle') {
+      // Auto-close console after 60 seconds of inactivity
+      if (status === 'idle' && !isStopped.current) {
+        console.log('⏰ Auto-closing due to 60s inactivity');
         setExpanded(false)
         setReply('')
         setTranscript('')
       }
-    }, 3000)
+    }, 60000) // 60 seconds
   }
 
   function say(text) {
@@ -231,6 +232,21 @@ export default function VoiceConsole({ onRunAnalysis, onNavigate, onToggleAutoSy
       case 'runAnalysis':
         window.dispatchEvent(new CustomEvent('runCoPilotAnalysis'));
         return say('Got it! Launching AI Co-Pilot analysis now. Gemini is analyzing your strategic data.');
+        
+      case 'runSync':
+        say('Running Emma memory sync. Please wait.');
+        try {
+          // Trigger the sync script
+          const response = await fetch('/api/emma-sync', { method: 'POST' });
+          if (response.ok) {
+            return say('Synchronization complete, Ash. Memory and logs synced to both drives.');
+          } else {
+            return say('Sync failed. Please check the console for details.');
+          }
+        } catch (error) {
+          console.error('Sync error:', error);
+          return say('Unable to run sync. The sync service may be unavailable.');
+        }
         
       case 'runFusion':
         window.dispatchEvent(new CustomEvent('runFusionAnalysis'));

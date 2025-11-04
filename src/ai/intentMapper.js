@@ -21,6 +21,12 @@ const intents = {
     'start analysis', 'analyze', 'run ai', 'copilot start'
   ],
   
+  runSync: [
+    'run sync', 'start sync', 'sync memory', 'sync drive', 
+    'synchronize', 'emma sync', 'sync data', 'run synchronization',
+    'sync logs', 'backup memory', 'sync to drive'
+  ],
+  
   runFusion: [
     'run fusion', 'fusion analysis', 'multi ai', 'start fusion',
     'launch fusion', 'run multi ai', 'fusion report', 'multi ai analysis'

@@ -1064,6 +1064,55 @@ export default defineConfig({
           }
         })()
       })
+
+      /**
+       * POST /api/emma-sync
+       * Triggers Emma memory sync script (syncs to Google Drive)
+       */
+      server.middlewares.use('/api/emma-sync', (req, res) => {
+        if (req.method !== 'POST') {
+          res.statusCode = 405
+          res.setHeader('Content-Type', 'application/json')
+          return res.end(JSON.stringify({ success: false, message: 'Method Not Allowed' }))
+        }
+
+        (async () => {
+          try {
+            console.log('[EMMA SYNC] Manual sync triggered')
+            
+            // Import and run sync dynamically
+            const { exec } = await import('child_process')
+            const { promisify } = await import('util')
+            const execAsync = promisify(exec)
+            
+            const { stdout, stderr } = await execAsync('node src/scripts/emma_sync.js')
+            
+            if (stderr) {
+              console.error('[EMMA SYNC] Error output:', stderr)
+            }
+            
+            console.log('[EMMA SYNC] Output:', stdout)
+            
+            res.statusCode = 200
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ 
+              success: true, 
+              message: 'Emma memory sync completed successfully',
+              output: stdout,
+              timestamp: new Date().toISOString()
+            }))
+          } catch (err) {
+            console.error('[EMMA SYNC] Sync error:', err)
+            res.statusCode = 500
+            res.setHeader('Content-Type', 'application/json')
+            res.end(JSON.stringify({ 
+              success: false, 
+              error: err.message,
+              message: 'Emma sync failed. Check console for details.'
+            }))
+          }
+        })()
+      })
     }
   }
 })
