@@ -17,6 +17,16 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Archive and maintenance logs (keep structure, ignore content)
+.archive/chat_history/*.json
+.archive/emma_memory/*.json
+.archive/logs/*.json
+.archive/*.json
+.archive/ARCHIVE_*.md
+
+# Emma sync state
+.emma_last_sync.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
