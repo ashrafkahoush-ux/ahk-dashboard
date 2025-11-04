@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-11-04T08-23-51",
+  "archived_at": "2025-11-04T08:23:51.791Z",
+  "memory_keys": [
+    "emma-memory-core",
+    "emma-learning-data",
+    "emma-interaction-log",
+    "emma-style-model",
+    "emma-knowledge-base"
+  ],
+  "note": "Emma memory data is stored in browser localStorage. To archive live data, run this from browser console or use the dashboard UI.",
+  "instructions": "Access browser console and run: JSON.stringify(localStorage)"
+}

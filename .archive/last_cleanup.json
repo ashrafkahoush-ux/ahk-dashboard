@@ -1,0 +1,15 @@
+{
+  "timestamp": "2025-11-04T08:24:18.688Z",
+  "stats": {
+    "filesRemoved": 0,
+    "bytesFreed": 0,
+    "archivesKept": 3,
+    "archivesRemoved": 0
+  },
+  "config": {
+    "maxArchives": 12,
+    "maxLogAge": 30,
+    "dryRun": false
+  },
+  "nextCleanup": "2025-11-11T08:24:18.689Z"
+}

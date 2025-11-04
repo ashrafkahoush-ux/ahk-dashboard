@@ -1,0 +1,125 @@
+{
+  "timestamp": "2025-11-04T08-23-51",
+  "archived_at": "2025-11-04T08:23:51.791Z",
+  "sessions": [],
+  "documentation_files": [
+    {
+      "file": "EMMA_ENHANCEMENT_SUMMARY.md",
+      "size": 9118,
+      "modified": "2025-11-04T08:05:01.338Z",
+      "archived": true
+    },
+    {
+      "file": "VOICE_CONSOLE_REFACTOR.md",
+      "size": 9842,
+      "modified": "2025-11-04T08:04:03.216Z",
+      "archived": true
+    },
+    {
+      "file": "MISSION_8_FOUNDATION.md",
+      "size": 20755,
+      "modified": "2025-11-01T20:32:04.810Z",
+      "archived": true
+    },
+    {
+      "file": "MISSION_10_TESTING.md",
+      "size": 5917,
+      "modified": "2025-11-01T23:18:11.259Z",
+      "archived": true
+    },
+    {
+      "file": "MISSION_11_DARK_MODE.md",
+      "size": 6949,
+      "modified": "2025-11-01T23:26:42.984Z",
+      "archived": true
+    },
+    {
+      "file": "README.md",
+      "size": 12827,
+      "modified": "2025-11-02T01:37:18.577Z",
+      "archived": true
+    }
+  ],
+  "commit_messages": [
+    {
+      "hash": "b818e67",
+      "message": "docs: add voice console refactor documentation"
+    },
+    {
+      "hash": "d536f4a",
+      "message": "refactor: voice console with state machine architecture"
+    },
+    {
+      "hash": "36888d9",
+      "message": "fix: voice console - remove duplicate stop() function and improve female voice selection"
+    },
+    {
+      "hash": "da81082",
+      "message": "feat: Emma System Enhancement - daily sync, voice console improvements, unified voice output"
+    },
+    {
+      "hash": "68c2f9f",
+      "message": "fix: correct forceLearningCycle import in EmmaLearning - Moved forceLearningCycle import from EmmaCore to selfLearner - Function is exported from selfLearner.mjs, not EmmaCore.mjs"
+    },
+    {
+      "hash": "2876f4b",
+      "message": "fix: remove smart quote from memoryCore.mjs line 266 - Changed What's to What\\'s (escaped apostrophe) - Dev server now running clean on port 3001"
+    },
+    {
+      "hash": "451978e",
+      "message": "fix: resolve syntax errors in memoryCore, fusionRunner, vite.config - Fixed smart quotes/commas in memoryCore.mjs line 274 - Updated fusionRunner.js to use fetchGeminiAnalysis from geminiClient - Fixed Google Drive API endpoints in vite.config.js (proper middleware pattern) - Dev server running clean on port 3000"
+    },
+    {
+      "hash": "c8a5e42",
+      "message": "feat(emma): Google Drive integration with personal + work accounts - googleapis@118.0.0 SDK integration - Backend endpoints: /api/google-drive/status, /api/google-drive/sync - GoogleDriveSync React component in Emma Learning dashboard - googleDriveConfig.js: Credentials, folder structure, OAuth config - googleDriveLinker.js: Drive operations (link, find, sync, upload) - setupEmmaFolders.js: Folder creation script with core instructions - getGoogleTokens.js: OAuth token generator helper - .env.local.example: Environment variable template - Emma folder structure: KnowledgeBase, Instructions, Dictionaries, Logs, Archives - Supports both ashraf.kahoush@gmail.com (personal) and ashraf@ahkstrategies.net (work) - Daily auto-sync with realtime instruction updates"
+    },
+    {
+      "hash": "9b8cb2c",
+      "message": "feat(pilot): Clients layer + ingestion + Command Pad + Fusion + Reports"
+    },
+    {
+      "hash": "7c9e83e",
+      "message": "feat(emma): Emma v5 Self-Learning Intelligence + Full Autonomy"
+    },
+    {
+      "hash": "28921be",
+      "message": "fix(emma): Resolve Vite compilation errors completely"
+    },
+    {
+      "hash": "6a66b22",
+      "message": "fix(emma): Resolve Vite parsing errors"
+    },
+    {
+      "hash": "0d5d86a",
+      "message": "feat(emma): Add Self-Learning Rules 11 & 12 - Continuous Improvement"
+    },
+    {
+      "hash": "f2b19b0",
+      "message": "feat(emma): Memory Core + Foundational Ground Rules"
+    },
+    {
+      "hash": "e84e971",
+      "message": "feat(emma): Intelligence Core - Context Awareness + Notifications + Proactive Mode"
+    },
+    {
+      "hash": "3809297",
+      "message": "feat(emma): Quick Actions Bar - floating bubbles for instant commands"
+    },
+    {
+      "hash": "dafe7e9",
+      "message": "feat(emma): Learning Mode - AI memory and proactive suggestions"
+    },
+    {
+      "hash": "58089ed",
+      "message": "feat(emma): Avatar & Mood System - animated expressions and particle effects"
+    },
+    {
+      "hash": "3bb8da7",
+      "message": "feat(emma): Emma Masterpiece v5 - vocabulary, reports archive, personality enhancements"
+    },
+    {
+      "hash": "e11c463",
+      "message": "fix(voice): add close button, prevent loop, female TTS, read-report command"
+    }
+  ]
+}
