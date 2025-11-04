@@ -9,6 +9,7 @@ import ReportsArchive from './components/ReportsArchive'
 import EmmaInsights from './components/EmmaInsights'
 import EmmaLearning from './components/EmmaLearning'
 import AICoPilot from './components/AICoPilot'
+import VoiceConsoleNew from './components/VoiceConsoleNew'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { preparePrompt } from './ai/autoAgent.browser'
 import { useProjects, useRoadmap } from './utils/useData'
@@ -64,6 +65,9 @@ function AppContent() {
 
       {/* Global AI Co-Pilot - Available on all pages (includes Emma Voice Console) */}
       <AICoPilot />
+      
+      {/* Emma Voice Console - New state machine architecture */}
+      <VoiceConsoleNew />
     </Layout>
   )
 }
