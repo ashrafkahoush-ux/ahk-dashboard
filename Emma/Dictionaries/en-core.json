@@ -1,0 +1,218 @@
+{
+  "language": "en",
+  "version": "1.0.0",
+  "description": "English core dictionary for Emma NLU",
+  
+  "synonyms": {
+    "start analysis": [
+      "begin analysis",
+      "run analysis",
+      "kick off analysis",
+      "init analysis",
+      "start the study",
+      "launch analysis",
+      "initiate analysis",
+      "commence analysis",
+      "fire up analysis",
+      "get started with analysis"
+    ],
+    "read report": [
+      "read it",
+      "brief me",
+      "executive summary",
+      "full report",
+      "recite report",
+      "summarize it",
+      "give me the brief",
+      "tell me the report",
+      "what's the report",
+      "show me the report",
+      "present the report",
+      "review the report",
+      "go over the report"
+    ],
+    "stop": [
+      "cancel",
+      "enough",
+      "terminate",
+      "halt",
+      "cease",
+      "quit",
+      "end",
+      "finish",
+      "shut up",
+      "be quiet",
+      "silence"
+    ],
+    "daily report": [
+      "daily summary",
+      "today's report",
+      "daily brief",
+      "daily update",
+      "daily metrics",
+      "today's metrics",
+      "daily stats"
+    ],
+    "display report": [
+      "show report",
+      "present report",
+      "visualize report",
+      "render report",
+      "display it"
+    ],
+    "email report": [
+      "send report",
+      "mail report",
+      "email it",
+      "send it via email",
+      "forward report"
+    ],
+    "repeat": [
+      "say again",
+      "say that again",
+      "repeat that",
+      "come again",
+      "what did you say",
+      "pardon",
+      "sorry what",
+      "one more time"
+    ],
+    "reload dictionary": [
+      "refresh dictionary",
+      "update dictionary",
+      "reload vocab",
+      "refresh vocabulary",
+      "reload language data"
+    ]
+  },
+  
+  "stopwords": [
+    "please",
+    "now",
+    "kindly",
+    "uh",
+    "um",
+    "ah",
+    "er",
+    "like",
+    "you know",
+    "I mean",
+    "actually",
+    "basically",
+    "literally",
+    "just",
+    "really",
+    "very",
+    "so",
+    "well",
+    "right",
+    "okay",
+    "ok",
+    "alright"
+  ],
+  
+  "intents": {
+    "START_ANALYSIS": [
+      "start analysis",
+      "begin analysis",
+      "run analysis",
+      "kick off analysis",
+      "init analysis",
+      "launch analysis"
+    ],
+    "READ_REPORT": [
+      "read report",
+      "brief me",
+      "executive summary",
+      "full report",
+      "summarize it",
+      "give me the brief"
+    ],
+    "STOP": [
+      "stop",
+      "cancel",
+      "enough",
+      "terminate",
+      "halt",
+      "quit"
+    ],
+    "DAILY_REPORT": [
+      "daily report",
+      "daily summary",
+      "today's report",
+      "daily metrics"
+    ],
+    "DISPLAY_REPORT": [
+      "display report",
+      "show report",
+      "present report"
+    ],
+    "EMAIL_REPORT": [
+      "email report",
+      "send report",
+      "mail report"
+    ],
+    "REPEAT": [
+      "repeat",
+      "say again",
+      "what did you say"
+    ],
+    "RELOAD_DICTIONARY": [
+      "reload dictionary",
+      "refresh dictionary",
+      "update dictionary"
+    ]
+  },
+  
+  "contextual_answers": {
+    "report_choice": {
+      "executive_summary": [
+        "executive summary",
+        "summary",
+        "brief",
+        "executive",
+        "overview",
+        "short version",
+        "quick version",
+        "the summary"
+      ],
+      "full_report": [
+        "full report",
+        "full",
+        "complete",
+        "detailed",
+        "everything",
+        "all of it",
+        "the full one",
+        "complete report",
+        "detailed report"
+      ]
+    },
+    "yes_no": {
+      "yes": [
+        "yes",
+        "yeah",
+        "yep",
+        "sure",
+        "okay",
+        "ok",
+        "yup",
+        "affirmative",
+        "correct",
+        "right",
+        "go ahead",
+        "proceed"
+      ],
+      "no": [
+        "no",
+        "nope",
+        "nah",
+        "negative",
+        "not now",
+        "cancel",
+        "skip",
+        "pass"
+      ]
+    }
+  }
+}

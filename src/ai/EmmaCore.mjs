@@ -205,13 +205,13 @@ export function getStyleModel() {
  */
 function getDefaultStyleModel() {
   return {
-    current: "warm-concise",
+    current: "expressive-engaging",
     acceptanceRate: 0,
     lastUpdate: new Date().toISOString(),
     adjustments: {
-      verbosity: "moderate",
+      verbosity: "expressive",
       empathy: "high",
-      proactivity: "medium"
+      proactivity: "high"
     }
   };
 }

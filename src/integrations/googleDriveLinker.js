@@ -17,7 +17,7 @@ function createDriveClient(accountType = 'personal') {
     const auth = new google.auth.OAuth2(
       env.clientId,
       env.clientSecret,
-      OAUTH_CONFIG.redirect_uri
+      OAUTH_CONFIG.redirectUri
     );
     
     // Set refresh token based on account type
@@ -38,56 +38,52 @@ function createDriveClient(accountType = 'personal') {
 }
 
 /**
- * Link both personal and business drives
+ * Link personal drive (ashraf.kahoush@gmail.com)
  */
 export async function linkDrives() {
   console.log('🔗 Starting Google Drive linking process...');
-  
-  const drives = [
-    { label: 'Personal', config: GOOGLE_CREDENTIALS.personal, type: 'personal' },
-    { label: 'Work', config: GOOGLE_CREDENTIALS.work, type: 'work' }
-  ];
+  console.log('📧 Profile: ashraf.kahoush@gmail.com');
   
   const results = [];
+  const config = GOOGLE_CREDENTIALS.personal;
   
-  for (const { label, config, type } of drives) {
-    try {
-      console.log(`🔗 Linking ${label} Drive (${config.client_email})...`);
-      
-      const drive = createDriveClient(type);
-      
-      if (!drive) {
-        console.warn(`⚠️ Skipping ${label} - requires server environment`);
-        continue;
-      }
-      
-      // Test connection by listing root files
-      const response = await drive.files.list({
-        pageSize: 1,
-        fields: 'files(id, name)',
-        q: "name='Emma' and mimeType='application/vnd.google-apps.folder'"
-      });
-      
-      const result = {
-        label,
-        email: config.client_email,
-        connected: true,
-        emmaFolderExists: response.data.files && response.data.files.length > 0,
-        emmaFolderId: response.data.files?.[0]?.id || null
-      };
-      
-      results.push(result);
-      console.log(`✅ ${label} Drive linked successfully`);
-      
-    } catch (error) {
-      console.error(`❌ Failed to link ${label} Drive:`, error.message);
-      results.push({
-        label,
-        email: config.client_email,
-        connected: false,
-        error: error.message
-      });
+  try {
+    console.log(`🔗 Linking Personal Drive (${config.client_email})...`);
+    
+    const drive = createDriveClient('personal');
+    
+    if (!drive) {
+      console.warn('⚠️ Skipping - requires server environment');
+      return results;
     }
+    
+    // Test connection by listing root files
+    const response = await drive.files.list({
+      pageSize: 1,
+      fields: 'files(id, name)',
+      q: "name='Emma' and mimeType='application/vnd.google-apps.folder'"
+    });
+    
+    const result = {
+      label: 'Personal',
+      email: config.client_email,
+      connected: true,
+      emmaFolderExists: response.data.files && response.data.files.length > 0,
+      emmaFolderId: response.data.files?.[0]?.id || null
+    };
+    
+    results.push(result);
+    console.log(`✅ Personal Drive linked successfully`);
+    console.log(`✅ Connected as: ${config.client_email}`);
+    
+  } catch (error) {
+    console.error(`❌ Failed to link Personal Drive:`, error.message);
+    results.push({
+      label: 'Personal',
+      email: config.client_email,
+      connected: false,
+      error: error.message
+    });
   }
   
   console.log('✅ Drive linking process completed');
@@ -211,33 +207,31 @@ export async function uploadToEmma(fileName, content, folderId, accountType = 'p
  */
 export async function syncEmmaKnowledge() {
   console.log('🔄 Starting Emma knowledge sync...');
+  console.log('📧 Profile: ashraf.kahoush@gmail.com');
   
   const syncResults = {
-    personal: { files: 0, folders: 0, errors: [] },
-    work: { files: 0, folders: 0, errors: [] }
+    personal: { files: 0, folders: 0, errors: [] }
   };
   
-  for (const accountType of ['personal', 'work']) {
-    try {
-      const emmaFolders = await findEmmaFolder(accountType);
-      
-      if (emmaFolders.length === 0) {
-        console.warn(`⚠️ No Emma folder found in ${accountType} account`);
-        continue;
-      }
-      
-      const emmaFolder = emmaFolders[0];
-      const files = await listEmmaFiles(emmaFolder.id, accountType);
-      
-      syncResults[accountType].files = files.length;
-      syncResults[accountType].folders = emmaFolders.length;
-      
-      console.log(`📂 Found ${files.length} files in ${accountType} Emma folder`);
-      
-    } catch (error) {
-      console.error(`❌ Sync error for ${accountType}:`, error.message);
-      syncResults[accountType].errors.push(error.message);
+  try {
+    const emmaFolders = await findEmmaFolder('personal');
+    
+    if (emmaFolders.length === 0) {
+      console.warn('⚠️ No Emma folder found in personal account');
+      return syncResults;
     }
+    
+    const emmaFolder = emmaFolders[0];
+    const files = await listEmmaFiles(emmaFolder.id, 'personal');
+    
+    syncResults.personal.files = files.length;
+    syncResults.personal.folders = emmaFolders.length;
+    
+    console.log(`📂 Found ${files.length} files in Emma folder`);
+    
+  } catch (error) {
+    console.error('❌ Sync error:', error.message);
+    syncResults.personal.errors.push(error.message);
   }
   
   console.log('✅ Emma knowledge sync completed');
@@ -249,19 +243,92 @@ export async function syncEmmaKnowledge() {
  */
 export async function getDriveStatus() {
   const status = {
-    personal: { connected: false, emmaFolder: null },
-    work: { connected: false, emmaFolder: null }
+    personal: { connected: false, emmaFolder: null, email: 'ashraf.kahoush@gmail.com' }
   };
   
-  for (const accountType of ['personal', 'work']) {
-    try {
-      const folders = await findEmmaFolder(accountType);
-      status[accountType].connected = true;
-      status[accountType].emmaFolder = folders.length > 0 ? folders[0] : null;
-    } catch (error) {
-      status[accountType].error = error.message;
-    }
+  try {
+    const folders = await findEmmaFolder('personal');
+    status.personal.connected = true;
+    status.personal.emmaFolder = folders.length > 0 ? folders[0] : null;
+    console.log('✅ Connected to Google Drive as: ashraf.kahoush@gmail.com');
+  } catch (error) {
+    status.personal.error = error.message;
+    console.error('❌ Drive connection error:', error.message);
   }
   
   return status;
+}
+
+/**
+ * Generate OAuth2 authorization URL
+ * Used by backend server to redirect user to Google consent screen
+ */
+export async function getAuthURL() {
+  const env = getGoogleEnv();
+  const oauth2Client = new google.auth.OAuth2(
+    env.clientId,
+    env.clientSecret,
+    OAUTH_CONFIG.redirectUri
+  );
+  
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: OAUTH_CONFIG.scopes,
+    prompt: 'consent' // Force consent screen to ensure refresh token
+  });
+  
+  console.log('🔗 Generated OAuth URL');
+  return authUrl;
+}
+
+/**
+ * Handle OAuth2 callback and exchange code for tokens
+ * Used by backend server to process redirect from Google
+ */
+export async function handleCallback(code) {
+  const env = getGoogleEnv();
+  const oauth2Client = new google.auth.OAuth2(
+    env.clientId,
+    env.clientSecret,
+    OAUTH_CONFIG.redirectUri
+  );
+  
+  try {
+    // Exchange authorization code for tokens
+    const { tokens } = await oauth2Client.getToken(code);
+    oauth2Client.setCredentials(tokens);
+    
+    // Get user info to verify profile
+    const oauth2 = google.oauth2({ version: 'v2', auth: oauth2Client });
+    const userInfo = await oauth2.userinfo.get();
+    
+    console.log(`✅ OAuth successful for: ${userInfo.data.email}`);
+    
+    return {
+      success: true,
+      email: userInfo.data.email,
+      tokens: tokens,
+      message: `Connected to Google Drive as ${userInfo.data.email}`
+    };
+  } catch (error) {
+    console.error('❌ OAuth callback error:', error.message);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Trigger Google Drive sync operation
+ * Wrapper around syncEmmaKnowledge for backend server
+ */
+export async function syncDrives() {
+  console.log('🔄 Backend triggered Drive sync');
+  const results = await syncEmmaKnowledge();
+  return {
+    success: true,
+    results: results,
+    timestamp: new Date().toISOString()
+  };
 }

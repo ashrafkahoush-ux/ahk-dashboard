@@ -1,0 +1,224 @@
+{
+  "tone_profiles": {
+    "strategic": {
+      "name": "Strategic Executive",
+      "description": "Crisp, decisive, authoritative. No hedging. Direct action-oriented language.",
+      "characteristics": {
+        "pace": {
+          "rate": 0.98,
+          "pitch": 0.95
+        },
+        "vocabulary": {
+          "avoid": ["maybe", "perhaps", "might", "could", "should", "I think", "possibly", "probably"],
+          "prefer": ["will", "shall", "must", "can", "is", "are", "requires", "demands"],
+          "transitions": ["Next.", "Moving forward.", "The decision is.", "Action required.", "Critical point."]
+        },
+        "structure": {
+          "opening": ["These are the decisive points.", "Executive summary.", "Key insights follow."],
+          "closing": ["That concludes the brief.", "Decision points delivered.", "End of summary."],
+          "pauses": {
+            "bullet": 350,
+            "section": 600
+          }
+        },
+        "language": {
+          "english": {
+            "preface": "These are the decisive points.",
+            "action_prefix": "Action required:",
+            "risk_prefix": "Risk identified:",
+            "summary_prefix": "Executive summary:"
+          },
+          "arabic": {
+            "preface": "هذه هي النقاط الحاسمة.",
+            "action_prefix": "إجراء مطلوب:",
+            "risk_prefix": "خطر محدد:",
+            "summary_prefix": "الخلاصة التنفيذية:"
+          }
+        }
+      }
+    },
+    "calm_supportive": {
+      "name": "Calm Supportive",
+      "description": "Gentle, encouraging, patient. Builds confidence. Friendly assistant tone.",
+      "characteristics": {
+        "pace": {
+          "rate": 0.92,
+          "pitch": 1.02
+        },
+        "vocabulary": {
+          "prefer": ["let's", "we can", "together", "I'm here to help", "no problem", "happy to", "sure thing"],
+          "avoid": ["must", "demands", "critical", "urgent", "immediately"],
+          "transitions": ["Let me help you with that.", "Sure, I can do that.", "No problem at all.", "I understand."]
+        },
+        "structure": {
+          "opening": ["I'm here to help.", "Let me take care of that for you.", "Happy to assist."],
+          "closing": ["Hope that helps!", "Let me know if you need anything else.", "Always here if you need me."],
+          "pauses": {
+            "bullet": 400,
+            "section": 700
+          }
+        },
+        "language": {
+          "english": {
+            "preface": "I'm here to help you with this.",
+            "action_prefix": "Here's what we can do:",
+            "risk_prefix": "Something to watch out for:",
+            "summary_prefix": "Let me walk you through this:"
+          },
+          "arabic": {
+            "preface": "أنا هنا لمساعدتك في هذا.",
+            "action_prefix": "هذا ما يمكننا فعله:",
+            "risk_prefix": "شيء يجب الانتباه له:",
+            "summary_prefix": "دعني أشرح لك:"
+          }
+        }
+      }
+    },
+    "poetic_visionary": {
+      "name": "Poetic Visionary",
+      "description": "Inspiring, metaphorical, big-picture thinking. Elevates ordinary reports to strategic narratives.",
+      "characteristics": {
+        "pace": {
+          "rate": 0.88,
+          "pitch": 1.05
+        },
+        "vocabulary": {
+          "prefer": ["envision", "transform", "illuminate", "unveil", "emerge", "journey", "path forward", "horizon"],
+          "avoid": ["just", "simply", "only", "basic", "routine"],
+          "transitions": ["Picture this.", "Consider the landscape.", "The story unfolds.", "Vision emerges."]
+        },
+        "structure": {
+          "opening": ["Let's envision the path forward.", "The data tells a story.", "A clearer picture emerges."],
+          "closing": ["The vision is clear.", "The horizon beckons.", "Onwards to transformation."],
+          "pauses": {
+            "bullet": 500,
+            "section": 800
+          }
+        },
+        "language": {
+          "english": {
+            "preface": "Let me paint the strategic landscape.",
+            "action_prefix": "The path forward illuminates:",
+            "risk_prefix": "Shadows on the horizon:",
+            "summary_prefix": "The narrative unfolds:"
+          },
+          "arabic": {
+            "preface": "دعني أرسم المشهد الاستراتيجي.",
+            "action_prefix": "الطريق يتضح:",
+            "risk_prefix": "ظلال في الأفق:",
+            "summary_prefix": "تتكشف القصة:"
+          }
+        }
+      }
+    },
+    "assertive_executive": {
+      "name": "Assertive Executive",
+      "description": "Commanding, urgent, high-stakes decision-making. For critical moments.",
+      "characteristics": {
+        "pace": {
+          "rate": 1.05,
+          "pitch": 0.92
+        },
+        "vocabulary": {
+          "prefer": ["immediately", "critical", "urgent", "demands", "requires", "now", "priority", "essential"],
+          "avoid": ["when you can", "if possible", "might want to", "consider"],
+          "transitions": ["Critical.", "Urgent action.", "Immediate priority.", "Time-sensitive."]
+        },
+        "structure": {
+          "opening": ["Immediate attention required.", "Critical briefing.", "High-priority update."],
+          "closing": ["Action immediately.", "Execute now.", "Priority confirmed."],
+          "pauses": {
+            "bullet": 250,
+            "section": 450
+          }
+        },
+        "language": {
+          "english": {
+            "preface": "Critical briefing follows.",
+            "action_prefix": "Immediate action:",
+            "risk_prefix": "Critical risk:",
+            "summary_prefix": "Urgent summary:"
+          },
+          "arabic": {
+            "preface": "إحاطة عاجلة.",
+            "action_prefix": "إجراء فوري:",
+            "risk_prefix": "خطر حرج:",
+            "summary_prefix": "ملخص عاجل:"
+          }
+        }
+      }
+    }
+  },
+  "tone_selection": {
+    "default": "strategic",
+    "context_triggers": {
+      "risk_detected": "assertive_executive",
+      "learning_mode": "calm_supportive",
+      "long_term_planning": "poetic_visionary",
+      "normal_operation": "strategic"
+    },
+    "user_override": {
+      "enabled": true,
+      "commands": {
+        "switch_tone_calm": "calm_supportive",
+        "switch_tone_strategic": "strategic",
+        "switch_tone_visionary": "poetic_visionary",
+        "switch_tone_assertive": "assertive_executive"
+      }
+    }
+  },
+  "emotional_intelligence": {
+    "sentiment_adjustments": {
+      "positive": {
+        "rate_boost": 1.05,
+        "pitch_lift": 1.02,
+        "phrases": ["Excellent progress!", "Outstanding results.", "Remarkable achievement."]
+      },
+      "negative": {
+        "rate_slow": 0.95,
+        "pitch_lower": 0.97,
+        "phrases": ["Challenges identified.", "Area needs attention.", "Course correction required."]
+      },
+      "neutral": {
+        "rate_stable": 1.0,
+        "pitch_stable": 1.0,
+        "phrases": ["Status normal.", "Proceeding as expected.", "Baseline maintained."]
+      }
+    },
+    "context_awareness": {
+      "time_of_day": {
+        "morning": {
+          "greeting": ["Good morning, Ash.", "Morning briefing ready.", "صباح الخير يا أش."],
+          "energy": "higher"
+        },
+        "afternoon": {
+          "greeting": ["Good afternoon, Ash.", "Afternoon update ready.", "مساء الخير يا أش."],
+          "energy": "stable"
+        },
+        "evening": {
+          "greeting": ["Good evening, Ash.", "Evening summary prepared.", "مساء الخير يا أش."],
+          "energy": "calmer"
+        }
+      },
+      "session_history": {
+        "first_interaction": "warm_welcome",
+        "returning_user": "continuity_acknowledgment",
+        "long_session": "check_energy_levels"
+      }
+    }
+  },
+  "adaptive_learning": {
+    "user_preferences": {
+      "track_preferred_tone": true,
+      "track_response_style": true,
+      "track_language_mix": true,
+      "adjust_over_time": true
+    },
+    "feedback_signals": {
+      "interruption": "adjust_pace_faster",
+      "repeat_request": "adjust_clarity_simpler",
+      "positive_confirmation": "maintain_current_style",
+      "silence_after": "evaluate_engagement"
+    }
+  }
+}

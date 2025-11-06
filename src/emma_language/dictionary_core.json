@@ -1,0 +1,90 @@
+{
+  "vocabulary": {
+    "actions": {
+      "start": ["begin", "initiate", "launch", "commence", "kick off", "fire up", "trigger", "activate", "run", "execute"],
+      "stop": ["halt", "cease", "end", "terminate", "cancel", "abort", "quit", "finish", "pause"],
+      "read": ["review", "check", "examine", "look at", "go through", "scan", "brief", "summarize", "show", "display"],
+      "analyze": ["study", "evaluate", "assess", "investigate", "examine", "inspect", "review", "scrutinize"],
+      "generate": ["create", "produce", "make", "build", "compose", "prepare", "draft", "write"],
+      "send": ["email", "transmit", "deliver", "dispatch", "forward", "share", "distribute"],
+      "open": ["show", "display", "pull up", "bring up", "access", "view"],
+      "close": ["hide", "dismiss", "shut", "exit", "leave"],
+      "repeat": ["say again", "one more time", "again", "replay", "reiterate"],
+      "explain": ["tell me", "clarify", "describe", "elaborate", "detail"]
+    },
+    "targets": {
+      "report": ["document", "summary", "brief", "overview", "findings", "results", "analysis"],
+      "analysis": ["study", "evaluation", "assessment", "investigation", "examination", "review"],
+      "data": ["information", "metrics", "statistics", "numbers", "figures", "insights"],
+      "dashboard": ["board", "panel", "screen", "interface", "console"],
+      "archive": ["history", "records", "past reports", "old files", "backups"],
+      "email": ["message", "mail", "correspondence"]
+    },
+    "modifiers": {
+      "daily": ["today", "today's", "current"],
+      "weekly": ["this week", "week's"],
+      "monthly": ["this month", "month's"],
+      "latest": ["newest", "most recent", "current", "updated"],
+      "previous": ["last", "prior", "earlier", "old"],
+      "all": ["every", "complete", "full", "entire", "whole"]
+    },
+    "projects": {
+      "germex": ["germex", "girmex", "jermex"],
+      "shiftev": ["shift ev", "shiftev", "shift e v", "shift egypt", "ev egypt"],
+      "investor": ["investors", "investment", "stakeholders", "shareholders"]
+    },
+    "politeness": {
+      "please": ["please", "kindly", "could you", "would you", "can you", "will you"],
+      "thank": ["thanks", "thank you", "appreciate it", "grateful"],
+      "sorry": ["sorry", "pardon", "excuse me", "apologies"]
+    }
+  },
+  "arabic_vocabulary": {
+    "actions": {
+      "start": ["ابدئي", "ابدأي", "ابدي", "شغلي", "شغّلي", "ابدا", "ابداي", "بدئي"],
+      "stop": ["توقفي", "توقفى", "توقف", "بس", "كفاية", "خلاص", "اوقفي"],
+      "read": ["اقرئي", "اقرأي", "اقري", "اقراي", "قولي", "قولى", "اعرضي"],
+      "analyze": ["حللي", "حلّلي", "درسي", "افحصي"],
+      "repeat": ["أعيدي", "اعيدي", "كرري", "مرة تانية", "تاني"],
+      "explain": ["اشرحي", "وضحي", "فسري"]
+    },
+    "targets": {
+      "report": ["التقرير", "التقرىر", "التقارير", "الملخص", "الخلاصة"],
+      "analysis": ["التحليل", "التحلىل", "الدراسة", "الفحص"],
+      "data": ["البيانات", "البىانات", "الأرقام", "المعلومات"]
+    },
+    "modifiers": {
+      "daily": ["اليوم", "اليومي", "يومي"],
+      "latest": ["الأخير", "الجديد", "الحالي"],
+      "all": ["كل", "جميع", "كامل"]
+    },
+    "questions": {
+      "what": ["ايه", "إيه", "ماذا", "شو", "وش"],
+      "next": ["التالي", "الجاي", "القادم", "بعد كده"],
+      "step": ["الخطوة", "الخطوه", "خطوة"]
+    }
+  },
+  "spelling_variations": {
+    "emma": ["emma", "ema", "ima", "emaa", "إيما", "إيمّا", "ايما"],
+    "germex": ["germex", "girmex", "jermex", "gremex"],
+    "shiftev": ["shiftev", "shift ev", "shift-ev", "shiftEV"]
+  },
+  "filler_words": {
+    "english": ["um", "uh", "like", "you know", "I mean", "sort of", "kind of", "actually", "basically", "literally"],
+    "arabic": ["يعني", "اممم", "اه", "ايوه", "طيب", "خلاص"]
+  },
+  "commands_context": {
+    "temporal": {
+      "yesterday": ["yesterday", "الأمس", "امس"],
+      "today": ["today", "اليوم"],
+      "tomorrow": ["tomorrow", "غداً", "غدا", "بكرة"],
+      "week": ["week", "أسبوع", "اسبوع"],
+      "month": ["month", "شهر"]
+    },
+    "quality": {
+      "quick": ["quick", "fast", "brief", "short", "سريع", "بسرعة"],
+      "detailed": ["detailed", "full", "complete", "comprehensive", "مفصل", "كامل"],
+      "summary": ["summary", "overview", "highlights", "ملخص", "خلاصة"]
+    }
+  }
+}

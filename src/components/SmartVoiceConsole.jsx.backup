@@ -1,0 +1,909 @@
+import React, { useEffect, useRef, useState } from "react";
+import { speak, stopSpeak, pickLang, speakWithPauses, initializeSpeech, setupBargeInDetection } from "../ai/speech";
+import { enhanceResponse, getGreeting, getConfirmation } from "../ai/responseEnhancer";
+import EmmaAvatar from "./EmmaAvatar";
+import EmmaNotifications, { useEmmaNotifications } from "./EmmaNotifications";
+import emmaMemory from "../ai/emmaMemory";
+import { usePageContext } from "../ai/contextAwareness";
+import sessionContext from "../engine/sessionContext";
+import { 
+  initializeMemory, 
+  getRules, 
+  remember, 
+  generateRuleBasedResponse,
+  getPreferredName 
+} from "../ai/memoryCore.mjs";
+import { 
+  logInteraction, 
+  summarizeLogs, 
+  updateStyleModel,
+  recallStyle 
+} from "../ai/EmmaCore.mjs";
+import { startSelfLearning } from "../ai/selfLearner.mjs";
+import { generateCleanSummary, extractKeyInsights, stripHtmlToPlain } from "../voice/pipeline/cleanSummary.js";
+import { languageSession } from "../voice/lang/detectLang.js";
+import { executiveSession, prepareExecutiveSpeech } from "../voice/persona/executive.js";
+import languageEngine from "../emma_language/languageEngine.js";
+import stripHTML from "../utils/stripHTML.js";
+
+export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState("");
+  const [status, setStatus] = useState("Idle");
+  const [awaitingFullReport, setAwaitingFullReport] = useState(false);
+  const [awaitingReportChoice, setAwaitingReportChoice] = useState(false); // NEW: For post-analysis choice
+  const [isOpen, setIsOpen] = useState(false);
+  const [emmaState, setEmmaState] = useState("idle"); // idle, listening, thinking, speaking
+  const [showParticles, setShowParticles] = useState(false);
+  const [lastSummary, setLastSummary] = useState(""); // For REPEAT intent
+  const [sessionLang, setSessionLang] = useState("en"); // Detected language
+  const recRef = useRef(null);
+  const timeoutRef = useRef(null);
+  const watchdogRef = useRef(null); // 15s timeout for stuck states
+  const lang = pickLang(uiLang);
+  const hasGreeted = useRef(false);
+  const pageContext = usePageContext(); // Context awareness
+  const { notifications, addNotification, dismissNotification } = useEmmaNotifications();
+
+  // Initialize Memory Core and Speech on mount
+  useEffect(() => {
+    // Initialize speech system FIRST
+    initializeSpeech();
+    
+    // Load persistent session context
+    sessionContext.load();
+    console.log('🧠 Session context loaded:', sessionContext.getContextSummary());
+    
+    const memory = initializeMemory();
+    const rules = getRules();
+    console.log('🧠 Emma Ground Rules Loaded:', rules);
+    console.log('📊 Total Rules:', rules.length, '(including self-learning Rules 11 & 12)');
+    remember('sessionStart', `Emma initialized for ${new Date().toLocaleString()}`);
+    
+    // Start self-learning scheduler (30-minute cycles)
+    startSelfLearning(30);
+    console.log('🧠 Emma v5 Self-Learning Intelligence activated');
+    
+    // Log initial learning insights
+    const insights = summarizeLogs();
+    console.log('📊 Emma Learning Insights:', insights);
+    
+    // DEBUG: Test language engine
+    console.log('🔍 DEBUG: Testing languageEngine...');
+    console.log('🔍 languageEngine:', languageEngine);
+    console.log('🔍 normalize function:', typeof languageEngine?.normalize);
+    try {
+      const testResult = languageEngine.normalize('brief me');
+      console.log('🔍 ✅ Test successful:', testResult);
+    } catch (err) {
+      console.error('🔍 ❌ Language engine error:', err);
+    }
+
+    // CLEANUP: Cancel any stale speech on unmount (prevents ghost voice)
+    return () => {
+      window.speechSynthesis?.cancel();
+      stopSpeak();
+    };
+  }, []);
+
+  // Re-enable voice listener when console opens
+  useEffect(() => {
+    if (isOpen) {
+      // Re-enable mic listening now that speech is unlocked
+      try {
+        setupBargeInDetection();
+        console.log('🎤 Voice listener re-initialized for console session');
+      } catch (e) {
+        console.warn("Voice listener setup failed:", e);
+      }
+    }
+  }, [isOpen]);
+
+  // NO GREETING - Emma starts listening immediately, no speech on open
+
+  const startListening = () => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+      const errorMsg = uiLang === "ar" ? "التعرّف الصوتي غير مدعوم" : "Voice recognition not supported";
+      speak(enhanceResponse(errorMsg), { lang, gender: "female" });
+      return;
+    }
+    const rec = new SR();
+    recRef.current = rec;
+    rec.lang = lang;
+    rec.interimResults = true;
+    rec.continuous = false; // ONE-SHOT MODE: Stop after first command
+
+    // ⏱️ WATCHDOG TIMER: Auto-reset after 15s to prevent stuck states
+    clearTimeout(watchdogRef.current);
+    watchdogRef.current = setTimeout(() => {
+      stopListening("15s watchdog timeout");
+      setIsOpen(false);
+      setEmmaState("idle");
+      setStatus("Ready");
+      console.log("⚠️ Watchdog triggered: reset to idle");
+    }, 15000);
+
+    rec.onstart = () => {
+      setIsListening(true);
+      setEmmaState("listening");
+      setStatus(uiLang === "ar" ? "جارٍ الاستماع..." : "Listening...");
+      setTranscript("");
+      resetTimer();
+    };
+
+    rec.onresult = async (e) => {
+      const text = Array.from(e.results).map(r => r[0].transcript).join(" ");
+      setTranscript(text);
+      resetTimer();
+
+      // 🎯 HYBRID MODE: Wake word detection
+      const wakePhrases = ["emma", "em", "amma"];
+      const heard = text.toLowerCase().trim();
+      
+      // Check if wake word is present
+      if (wakePhrases.some(p => heard.startsWith(p))) {
+        const command = heard.replace(/emma|em|amma/i, "").trim();
+        
+        if (command.length === 0) {
+          // User just said "Emma?"
+          const acknowledgeMsg = uiLang === "ar" ? "نعم، أنا هنا." : "Yes, I'm here.";
+          speak(acknowledgeMsg, { lang, gender: "female" });
+          stopListening();
+          return;
+        }
+        
+        // Execute the cleaned command - continue to normal processing
+        console.log('🎯 Wake word detected, processing command:', command);
+        setTranscript(command); // Update transcript to show just the command
+      }
+
+      // Load current session context
+      const currentContext = sessionContext.getContextSummary();
+      console.log('🧠 Current context:', currentContext);
+      
+      // Check for follow-up mode
+      if (sessionContext.isInFollowUpMode()) {
+        console.log('🔄 Follow-up mode active - continuing:', currentContext.topic);
+      }
+
+      // 🧠 LANGUAGE ENGINE: Normalize input → extract intent with NLU (pass context)
+      const normalized = languageEngine.normalize(text, currentContext);
+      const intent = normalized.action;
+      const confidence = normalized.confidence;
+      const detectedLanguage = normalized.language;
+      
+      // Log language engine output
+      console.log("🧠 Language Engine → Intent:", intent);
+      console.log("📊 Confidence:", (confidence * 100).toFixed(1) + "%");
+      console.log("🌍 Language:", detectedLanguage);
+      console.log("😊 Sentiment:", normalized.sentiment.valence);
+      console.log("🎭 Tone:", normalized.tone);
+      console.log("📚 Dictionary result:", normalized.dictionaryResult);
+      
+      // Check if awaiting report choice (summary vs full) - USE DICTIONARY
+      if (awaitingReportChoice) {
+        setAwaitingReportChoice(false);
+        
+        // Get contextual answers from dictionary
+        const contextAnswers = languageEngine.getContextualAnswers('report_choice');
+        const summaryAnswers = contextAnswers.executive_summary || [];
+        const fullAnswers = contextAnswers.full_report || [];
+        
+        // Match using dictionary system
+        const summaryMatch = languageEngine.matchExpectedAnswer(text, summaryAnswers);
+        const fullMatch = languageEngine.matchExpectedAnswer(text, fullAnswers);
+        
+        if (summaryMatch.confidence > 0.6) {
+          console.log('📚 Dictionary matched: Executive Summary');
+          readExecutiveSummary();
+          return;
+        }
+        
+        if (fullMatch.confidence > 0.6) {
+          console.log('📚 Dictionary matched: Full Report');
+          readFullReport();
+          return;
+        }
+        
+        // Unclear response - ask again
+        const clarifyMsg = detectedLanguage === "ar"
+          ? "لم أفهم. هل تريد الملخص أم التقرير الكامل؟"
+          : "I didn't catch that. Did you want the summary or the full report?";
+        speak(clarifyMsg, { lang: pickLang(detectedLanguage), gender: "female" });
+        setAwaitingReportChoice(true);
+        return;
+      }
+      
+      // Check if awaiting full report confirmation - USE DICTIONARY
+      if (awaitingFullReport) {
+        // Get yes/no answers from dictionary
+        const yesNoAnswers = languageEngine.getContextualAnswers('yes_no');
+        const yesAnswers = yesNoAnswers.yes || [];
+        const noAnswers = yesNoAnswers.no || [];
+        
+        const yesMatch = languageEngine.matchExpectedAnswer(text, yesAnswers);
+        const noMatch = languageEngine.matchExpectedAnswer(text, noAnswers);
+        
+        if (yesMatch.confidence > 0.6) {
+          console.log('📚 Dictionary matched: Yes');
+          setAwaitingFullReport(false);
+          setEmmaState("speaking");
+          
+          const fullText = window.__FULL_REPORT_TEXT__ || "No detailed report available.";
+          const cleanedFullText = stripHTML(fullText);
+          
+          await speakWithPauses(cleanedFullText, { lang: pickLang(detectedLanguage) });
+          
+          stopListening();
+          onCommand?.("read-full-report");
+          
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          return;
+        }
+        
+        if (noMatch.confidence > 0.6) {
+          console.log('📚 Dictionary matched: No');
+          setAwaitingFullReport(false);
+          const standbyMsg = detectedLanguage === "ar" 
+            ? "مفهوم. في الانتظار."
+            : "Understood. Standing by.";
+          
+          speak(standbyMsg, { lang: pickLang(detectedLanguage), gender: "female" });
+          
+          stopListening();
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 2000);
+          return;
+        }
+      }
+      
+      // USE CONFIDENCE-GATED RESPONSE from dictionary system
+      const gatedResponse = languageEngine.getConfidenceGatedResponse(
+        { action: intent, confidence, canonical: normalized.dictionaryResult?.canonical },
+        detectedLanguage
+      );
+      
+      if (gatedResponse.action === 'fallback') {
+        // Low confidence (< 0.4) - show examples
+        speak(gatedResponse.fallbackMessage, { lang: pickLang(detectedLanguage), gender: "female" });
+        setEmmaState("idle");
+        return;
+      }
+      
+      if (gatedResponse.action === 'clarify') {
+        // Medium confidence (0.4-0.69) - ask for confirmation
+        speak(gatedResponse.clarificationMessage, { lang: pickLang(detectedLanguage), gender: "female" });
+        setEmmaState("idle");
+        // TODO: Implement confirmation flow
+        return;
+      }
+      
+      // High confidence (>= 0.7) - proceed with intent execution
+      
+      // Update session language
+      setSessionLang(detectedLanguage);
+      
+      switch(intent) {
+        case "START_ANALYSIS":
+          setEmmaState("thinking");
+          const msg = uiLang === "ar" ? "جارٍ تشغيل التحليل" : "Starting analysis";
+          const enhancedMsg = generateRuleBasedResponse(msg, { type: 'action', includesTasks: true });
+          speak(enhanceResponse(enhancedMsg, { addPersonality: true }), { lang, gender: "female" });
+          
+          // Update session context
+          sessionContext.updateIntent("START_ANALYSIS", []);
+          sessionContext.setState("processing");
+          sessionContext.addToHistory(text, enhancedMsg, "START_ANALYSIS");
+          
+          emmaMemory.recordCommand("run-analysis");
+          remember('command_executed', { command: 'run-analysis', timestamp: Date.now() });
+          logInteraction({ command: 'run-analysis', accepted: true, context: pageContext.page });
+          
+          // Wait for analysis to complete, then ask for report preference
+          setTimeout(async () => {
+            const choiceQuestion = detectedLanguage === "ar"
+              ? "التحليل مكتمل. هل تريد الملخص التنفيذي أم التقرير الكامل؟"
+              : "Analysis complete. Would you like the Executive Summary or the Full Report?";
+            
+            speak(choiceQuestion, { lang: pickLang(detectedLanguage), gender: "female" });
+            setAwaitingReportChoice(true);
+            sessionContext.setFollowUpMode("REPORT_READING");
+            // Keep listening for answer - don't close console
+          }, 5000); // Wait 5s for analysis to complete
+          
+          onCommand?.("run-analysis");
+          
+          if (Math.random() < 0.1) updateStyleModel();
+          break;
+
+        case "READ_REPORT":
+          setEmmaState("speaking");
+          
+          // Update session context
+          sessionContext.updateIntent("READ_REPORT", []);
+          sessionContext.setState("processing");
+          
+          // Get the latest analysis from localStorage
+          const storedAnalysis = localStorage.getItem('ahk-ai-analysis');
+          let reportData = null;
+          
+          if (storedAnalysis) {
+            try {
+              const parsed = JSON.parse(storedAnalysis);
+              reportData = parsed.analysis;
+            } catch (e) {
+              console.error('Failed to parse stored analysis:', e);
+            }
+          }
+          
+          // Use summary from analysis, or fallback to clean HTML
+          let summaryText = "";
+          let fullReportText = "";
+          
+          if (reportData && reportData.summary) {
+            summaryText = stripHTML(reportData.summary);
+            fullReportText = reportData.fullText || stripHTML(reportData.summary);
+          } else {
+            // Fallback to old method
+            const reportHtml = localStorage.getItem('emma_last_report') || "No report available";
+            const cleanSummary = generateCleanSummary(reportHtml, detectedLanguage);
+            summaryText = prepareExecutiveSpeech(cleanSummary, detectedLanguage, true);
+            fullReportText = summaryText;
+          }
+          
+          setLastSummary(summaryText); // Save for REPEAT
+          
+          // Speak executive summary first
+          const executiveSummary = detectedLanguage === "ar" 
+            ? `ملخص تنفيذي: ${summaryText}`
+            : `Executive Summary: ${summaryText}`;
+          
+          await speakWithPauses(executiveSummary, { lang: pickLang(detectedLanguage) });
+          
+          // Update context after speaking
+          sessionContext.addToHistory(text, executiveSummary, "READ_REPORT");
+          sessionContext.setFollowUpMode("REPORT_READING");
+          
+          emmaMemory.recordCommand("read-report");
+          remember('report_read', { lang: detectedLanguage, timestamp: Date.now() });
+          
+          // Wait 2 seconds, then ask about full report
+          setTimeout(async () => {
+            const followUpQuestion = detectedLanguage === "ar"
+              ? "هل تريدني أن أقرأ التقرير الكامل المفصل؟"
+              : "Would you like me to read the full detailed report?";
+            
+            speak(followUpQuestion, { lang: pickLang(detectedLanguage), gender: "female" });
+            setAwaitingFullReport(true);
+            
+            // Store full report text for later use
+            window.__FULL_REPORT_TEXT__ = fullReportText;
+          }, 2000);
+          
+          break;
+
+        case "DAILY_REPORT":
+          setEmmaState("speaking");
+          const dailyMsg = uiLang === "ar" ? "هل ترغب بعرضه أم إرساله بالبريد؟" : "Would you like it displayed or emailed?";
+          speak(enhanceResponse(dailyMsg), { lang, gender: "female" });
+          emmaMemory.recordCommand("daily-report-request");
+          logInteraction({ command: 'daily-report', accepted: true, context: pageContext.page });
+          stopListening();
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        case "DISPLAY_REPORT":
+          const confirm = getConfirmation();
+          const enhancedConfirm = generateRuleBasedResponse(confirm, { type: 'action' });
+          speak(enhanceResponse(enhancedConfirm), { lang, gender: "female" });
+          setEmmaState("working");
+          emmaMemory.recordCommand("display-report");
+          emmaMemory.recordReportGeneration();
+          emmaMemory.setPreference('reportDelivery', 'display');
+          remember('report_generated', { type: 'display', timestamp: Date.now() });
+          logInteraction({ command: 'display-report', accepted: true, context: pageContext.page });
+          stopListening();
+          onCommand?.("display-report");
+          setTimeout(() => {
+            setEmmaState("happy");
+            setShowParticles(true);
+            remember('milestone', { event: 'report_displayed_successfully', timestamp: Date.now() });
+            setTimeout(() => {
+              setShowParticles(false);
+              setIsOpen(false);
+              setEmmaState("idle");
+            }, 2000);
+          }, 1500);
+          break;
+
+        case "EMAIL_REPORT":
+          const emailConfirm = getConfirmation();
+          speak(enhanceResponse(emailConfirm), { lang, gender: "female" });
+          setEmmaState("working");
+          emmaMemory.recordCommand("email-report");
+          emmaMemory.recordReportGeneration();
+          emmaMemory.setPreference('reportDelivery', 'email');
+          stopListening();
+          onCommand?.("email-report");
+          setTimeout(() => {
+            setEmmaState("happy");
+            setShowParticles(true);
+            setTimeout(() => {
+              setShowParticles(false);
+              setIsOpen(false);
+              setEmmaState("idle");
+            }, 2000);
+          }, 1500);
+          break;
+
+        case "RISK_ANALYSIS":
+          setEmmaState("thinking");
+          const riskMsg = uiLang === "ar" ? "جارٍ تحليل المخاطر" : "Running risk analysis";
+          speak(enhanceResponse(riskMsg), { lang, gender: "female" });
+          stopListening();
+          onCommand?.("risk-analysis");
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        case "SHOW_REPORTS":
+          const archiveMsg = uiLang === "ar" ? "فتح أرشيف التقارير" : "Opening reports archive";
+          speak(enhanceResponse(archiveMsg), { lang, gender: "female" });
+          emmaMemory.recordCommand("show-reports");
+          stopListening();
+          onCommand?.("show-reports");
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        case "FUSION_GERMEX":
+          setEmmaState("thinking");
+          speak(enhanceResponse("Running fusion analysis for Germex"), { lang, gender: "female" });
+          stopListening();
+          onCommand?.("fusion-germex");
+          logInteraction({ command: 'fusion-germex', accepted: true, context: 'voice' });
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        case "FUSION_SHIFTEV":
+          setEmmaState("thinking");
+          speak(enhanceResponse("Running fusion analysis for Shift EV Egypt"), { lang, gender: "female" });
+          stopListening();
+          onCommand?.("fusion-shiftev");
+          logInteraction({ command: 'fusion-shiftev', accepted: true, context: 'voice' });
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        case "REPORT_GERMEX_INVESTOR":
+          setEmmaState("working");
+          speak(enhanceResponse("Generating investor report for Germex"), { lang, gender: "female" });
+          stopListening();
+          onCommand?.("report-germex-investor");
+          logInteraction({ command: 'report-germex-investor', accepted: true, context: 'voice' });
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        case "RISK_SHIFTEV":
+          setEmmaState("thinking");
+          speak(enhanceResponse("Running risk analysis for Shift EV Egypt"), { lang, gender: "female" });
+          stopListening();
+          onCommand?.("risk-shiftev");
+          logInteraction({ command: 'risk-shiftev', accepted: true, context: 'voice' });
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        case "STOP":
+          const stopMsg = uiLang === "ar" ? "حسناً، سأتوقف" : "Okay, stopping now";
+          speak(enhanceResponse(stopMsg), { lang, gender: "female" });
+          
+          // Update session context - clear state
+          sessionContext.updateIntent("STOP", []);
+          sessionContext.setState("idle");
+          sessionContext.clearFollowUpMode();
+          sessionContext.addToHistory(text, stopMsg, "STOP");
+          
+          stopListening("User requested stop");
+          clearTimeout(watchdogRef.current);
+          setAwaitingFullReport(false); // Reset full report state
+          setAwaitingReportChoice(false); // Reset report choice state
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 2000);
+          break;
+
+        case "REPEAT":
+          setEmmaState("speaking");
+          if (lastSummary) {
+            await speakWithPauses(lastSummary, { lang: pickLang(sessionLang) });
+            remember('command_repeat', { timestamp: Date.now() });
+          } else {
+            const noRepeatMsg = sessionLang === "ar" ? "لا يوجد شيء لإعادته" : "Nothing to repeat";
+            speak(noRepeatMsg, { lang: pickLang(sessionLang), gender: "female" });
+          }
+          stopListening();
+          clearTimeout(watchdogRef.current);
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 2000);
+          break;
+
+        case "NEXT_ACTIONS":
+          setEmmaState("speaking");
+          // Language already detected by engine
+          
+          const reportHtmlForActions = localStorage.getItem('emma_last_report') || "";
+          const { actions } = extractKeyInsights(stripHtmlToPlain(reportHtmlForActions));
+          
+          const actionsSummary = actions.length 
+            ? (detectedLanguage === "ar" ? "الخطوات التالية: " : "Next actions: ") + actions.join(". ") 
+            : (detectedLanguage === "ar" ? "لا توجد إجراءات محددة" : "No actions identified");
+          
+          const executiveActions = prepareExecutiveSpeech(actionsSummary, detectedLanguage, false);
+          setLastSummary(executiveActions);
+          
+          await speakWithPauses(executiveActions, { lang: pickLang(detectedLanguage) });
+          remember('next_actions_requested', { lang: detectedLanguage, timestamp: Date.now() });
+          stopListening();
+          clearTimeout(watchdogRef.current);
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        case "RELOAD_DICTIONARY":
+          setEmmaState("thinking");
+          console.log('📚 Reloading dictionary...');
+          
+          try {
+            const stats = languageEngine.reloadDictionary();
+            const reloadMsg = detectedLanguage === "ar"
+              ? `تم تحديث القاموس: ${stats.totalIntents} أوامر، ${stats.totalSynonyms} مرادفات`
+              : `📚 Dictionary reloaded: ${stats.totalIntents} intents, ${stats.totalSynonyms} synonyms`;
+            
+            speak(reloadMsg, { lang: pickLang(detectedLanguage), gender: "female" });
+            console.log('✅ Dictionary reload complete:', stats);
+          } catch (error) {
+            console.error('❌ Dictionary reload failed:', error);
+            const errorMsg = detectedLanguage === "ar"
+              ? "فشل تحديث القاموس"
+              : "Dictionary reload failed";
+            speak(errorMsg, { lang: pickLang(detectedLanguage), gender: "female" });
+          }
+          
+          stopListening();
+          setTimeout(() => {
+            setIsOpen(false);
+            setEmmaState("idle");
+          }, 3000);
+          break;
+
+        default:
+          // Fallback: Emma didn't understand
+          if (text.trim().length > 0) {
+            const clarify = uiLang === "ar" 
+              ? "لم أفهم ذلك تماماً. حاول إعادة الصياغة" 
+              : "I didn't fully catch that, Ash. Try rephrasing.";
+            speak(enhanceResponse(clarify), { lang, gender: "female" });
+            setEmmaState("idle");
+          }
+          break;
+      }
+    };
+
+    rec.onerror = (e) => {
+      setStatus(`Error: ${e.error}`);
+      stopListening();
+    };
+
+    rec.onend = () => {
+      setIsListening(false);
+      recRef.current = null;
+    };
+
+    rec.start();
+  };
+
+  const stopListening = (reason = "") => {
+    clearTimeout(timeoutRef.current);
+    clearTimeout(watchdogRef.current); // Clear watchdog on manual stop
+    try { recRef.current?.stop(); } catch {}
+    recRef.current = null;
+    setIsListening(false);
+    setEmmaState("idle");
+    if (reason) console.log("🎤 Voice stopped:", reason);
+  };
+
+  // 📊 EXECUTIVE SUMMARY READER
+  const readExecutiveSummary = async () => {
+    setEmmaState("speaking");
+    
+    try {
+      const analysisData = localStorage.getItem('ahk-ai-analysis');
+      if (!analysisData) {
+        speak("No analysis available yet.", { lang: pickLang("en"), gender: "female" });
+        stopListening();
+        setTimeout(() => {
+          setIsOpen(false);
+          setEmmaState("idle");
+        }, 2000);
+        return;
+      }
+
+      const analysis = JSON.parse(analysisData);
+      const summary = analysis.summary || analysis.text?.split('\n').slice(0, 3).join(' ') || "No summary available.";
+      const cleanedSummary = stripHTML(summary);
+
+      await speak(cleanedSummary, { lang: pickLang(analysis.language || "en"), gender: "female" });
+
+      stopListening();
+      onCommand?.("read-executive-summary");
+
+      setTimeout(() => {
+        setIsOpen(false);
+        setEmmaState("idle");
+      }, 3000);
+    } catch (err) {
+      console.error("❌ Error reading executive summary:", err);
+      speak("Error reading summary.", { lang: pickLang("en"), gender: "female" });
+      stopListening();
+      setTimeout(() => {
+        setIsOpen(false);
+        setEmmaState("idle");
+      }, 2000);
+    }
+  };
+
+  // 📄 FULL REPORT READER
+  const readFullReport = async () => {
+    setEmmaState("speaking");
+    
+    try {
+      const analysisData = localStorage.getItem('ahk-ai-analysis');
+      if (!analysisData) {
+        speak("No analysis available yet.", { lang: pickLang("en"), gender: "female" });
+        stopListening();
+        setTimeout(() => {
+          setIsOpen(false);
+          setEmmaState("idle");
+        }, 2000);
+        return;
+      }
+
+      const analysis = JSON.parse(analysisData);
+      const fullText = analysis.fullText || analysis.text || "No report available.";
+      const cleanedFullText = stripHTML(fullText);
+
+      await speakWithPauses(cleanedFullText, { lang: pickLang(analysis.language || "en") });
+
+      stopListening();
+      onCommand?.("read-full-report");
+
+      setTimeout(() => {
+        setIsOpen(false);
+        setEmmaState("idle");
+      }, 3000);
+    } catch (err) {
+      console.error("❌ Error reading full report:", err);
+      speak("Error reading report.", { lang: pickLang("en"), gender: "female" });
+      stopListening();
+      setTimeout(() => {
+        setIsOpen(false);
+        setEmmaState("idle");
+      }, 2000);
+    }
+  };
+
+  const resetTimer = () => {
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      // ONE-SHOT: After 60s of silence, close the console
+      stopListening("Silence timeout");
+      const msg = uiLang === "ar" ? "سأكون هنا إذا احتجتني" : "I'll be here if you need me";
+      speak(enhanceResponse(msg), { lang, gender: "female" });
+      setTimeout(() => {
+        setIsOpen(false);
+        setEmmaState("idle");
+      }, 2000);
+    }, 60000);
+  };
+
+  const closeConsole = () => {
+    stopSpeak();
+    stopListening("Manual close");
+    setAwaitingFullReport(false); // Reset full report state
+    setIsOpen(false);
+    setEmmaState("idle");
+  };
+
+  useEffect(() => () => stopListening("Unmount"), []);
+
+  // Emma state indicator styles
+  const getEmmaIndicator = () => {
+    switch (emmaState) {
+      case "listening":
+        return { color: "#10b981", icon: "🎤", label: "Listening" };
+      case "thinking":
+        return { color: "#f59e0b", icon: "🧠", label: "Thinking" };
+      case "speaking":
+        return { color: "#8b5cf6", icon: "💬", label: "Speaking" };
+      default:
+        return { color: "#6b7280", icon: "😊", label: "Ready" };
+    }
+  };
+
+  const indicator = getEmmaIndicator();
+
+  return (
+    <>
+      {/* Emma Bot Button with Avatar and Notifications */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => {
+            setIsOpen(prev => {
+              const newState = !prev;
+              // AUTO-START: When opening, immediately start listening
+              if (newState) {
+                // ✅ Initialize speech system on console open (with user interaction)
+                initializeSpeech();
+                setTimeout(() => startListening(), 100);
+              }
+              return newState;
+            });
+          }}
+          className="relative hover:scale-110 transition-transform"
+          title="Emma Voice Console"
+        >
+          <EmmaAvatar mood={emmaState} showParticles={showParticles} />
+          
+          {/* Notification Badge */}
+          <EmmaNotifications
+            notifications={notifications}
+            onDismiss={dismissNotification}
+            onAction={(action) => {
+              onCommand?.(action);
+              setIsOpen(false);
+            }}
+          />
+        </button>
+      </div>
+
+      {/* Voice Console Panel */}
+      {isOpen && (
+        <div className="fixed bottom-24 right-6 z-50 w-[380px] p-4 rounded-2xl shadow-2xl bg-gradient-to-br from-[#0b1020] via-[#1e1b4b] to-[#0b1020] text-white border border-purple-500/30">
+          {/* Header with Emma Status */}
+          <div className="flex justify-between items-center mb-3">
+            <div className="flex items-center gap-2">
+              <div 
+                className="h-3 w-3 rounded-full animate-pulse" 
+                style={{ backgroundColor: indicator.color }}
+              />
+              <span className="font-semibold text-lg">Emma</span>
+              <span className="text-xs opacity-60">{indicator.icon} {indicator.label}</span>
+            </div>
+            <button
+              onClick={closeConsole}
+              className="px-3 py-1 rounded text-sm bg-slate-700 hover:bg-slate-600"
+            >
+              {uiLang === "ar" ? "إغلاق" : "Close"}
+            </button>
+          </div>
+
+          <div className="text-xs opacity-70 mb-1">{status}</div>
+          <div className="bg-white/5 rounded-lg p-2 h-24 overflow-y-auto text-sm font-mono">{transcript || "..."}</div>
+          
+          {/* 🧪 TEST SPEECH BUTTON */}
+          <button
+            onClick={() => {
+              console.log('🧪 Testing speech...');
+              speak("Testing Emma's voice. If you can hear this, speech is working.", { 
+                lang: "en-US", 
+                volume: 1,
+                rate: 1.0,
+                gender: "female" 
+              });
+            }}
+            className="mt-2 w-full px-3 py-1.5 rounded bg-green-600 hover:bg-green-500 text-white text-sm font-semibold"
+          >
+            🧪 Test Speech
+          </button>
+          
+          {/* �️ PUSH-TO-TALK BUTTON */}
+          <button
+            onMouseDown={() => {
+              console.log('🎙️ Push-to-talk: Started listening');
+              startListening();
+            }}
+            onMouseUp={() => {
+              console.log('🎙️ Push-to-talk: Stopped listening');
+              stopListening("Push-to-talk released");
+            }}
+            className="mt-2 w-full px-3 py-1.5 rounded bg-purple-600 hover:bg-purple-500 active:bg-purple-700 text-white text-sm font-semibold"
+          >
+            🎙️ Hold to Talk
+          </button>
+          
+          {/* �🎮 CONTROL BUTTONS (Stop/Repeat/Read Report) */}
+          <div className="mt-3 flex gap-2 justify-between">
+            <button
+              onClick={() => {
+                stopSpeak();
+                stopListening("User clicked Stop");
+                setIsOpen(false);
+                setEmmaState("idle");
+              }}
+              disabled={!isListening && emmaState === "idle"}
+              className="px-3 py-1.5 rounded text-xs bg-red-600 hover:bg-red-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              {uiLang === "ar" ? "توقفي ⏹️" : "Stop ⏹️"}
+            </button>
+            
+            <button
+              onClick={async () => {
+                if (lastSummary) {
+                  setEmmaState("speaking");
+                  await speakWithPauses(lastSummary, { lang: pickLang(sessionLang) });
+                  setEmmaState("idle");
+                }
+              }}
+              disabled={!lastSummary}
+              className="px-3 py-1.5 rounded text-xs bg-blue-600 hover:bg-blue-700 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              {uiLang === "ar" ? "أعيدي 🔁" : "Repeat 🔁"}
+            </button>
+            
+            <button
+              onClick={async () => {
+                setEmmaState("speaking");
+                const detectedLang = sessionLang;
+                const reportHtml = localStorage.getItem('emma_last_report') || "No report available";
+                const cleanSummary = generateCleanSummary(reportHtml, detectedLang);
+                const executiveSummary = prepareExecutiveSpeech(cleanSummary, detectedLang, true);
+                setLastSummary(executiveSummary);
+                await speakWithPauses(executiveSummary, { lang: pickLang(detectedLang) });
+                setEmmaState("idle");
+                setTimeout(() => setIsOpen(false), 2000);
+              }}
+              className="px-3 py-1.5 rounded text-xs bg-purple-600 hover:bg-purple-700 transition-all"
+            >
+              {uiLang === "ar" ? "اقرئي التقرير 📄" : "Read Report 📄"}
+            </button>
+          </div>
+          
+          <div className="mt-3 text-xs text-gray-400">
+            💡 {uiLang === "ar" 
+              ? 'جرب: "إمّا، ابدئي التحليل" أو "اقرئي التقرير"'
+              : 'Try: "Emma, start analysis" or "read the report"'}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -1,53 +1,55 @@
 /**
  * Google Drive Configuration for Emma Ecosystem
- * Links personal and business Google Drives for seamless access
+ * UPDATED: Single profile configuration (ashraf.kahoush@gmail.com)
+ * Root: /GoogleDrive/MyDrive/AHK Profile/Emma/
  */
 
 export const GOOGLE_CREDENTIALS = {
   personal: {
     client_email: "ashraf.kahoush@gmail.com",
-    driveFolder: "My Drive",
+    driveFolder: "AHK Profile",
+    rootPath: "/GoogleDrive/MyDrive/AHK Profile/Emma/",
     permission: "owner",
-    description: "Personal Google Drive - Primary knowledge source"
-  },
-  work: {
-    client_email: "ashraf@ahkstrategies.net",
-    driveFolder: "AHKStrategies Shared Drive",
-    permission: "owner",
-    description: "Business Google Workspace - Company knowledge base"
+    description: "Personal Google Drive - Primary Emma workspace"
   }
 };
 
 /**
- * Emma folder structure across both drives
+ * Emma folder structure in /AHK Profile/Emma/
  */
 export const EMMA_FOLDER_STRUCTURE = {
-  root: "Emma",
+  root: "AHK Profile/Emma",
   subfolders: [
     {
       name: "KnowledgeBase",
       description: "Core knowledge, facts, and reference materials",
-      syncFrequency: "daily"
-    },
-    {
-      name: "Instructions",
-      description: "Operating instructions and protocols for Emma, Grok, ProGemini",
-      syncFrequency: "realtime"
-    },
-    {
-      name: "Dictionaries",
-      description: "Terminology, acronyms, and domain-specific language",
-      syncFrequency: "daily"
+      syncFrequency: "daily",
+      readWrite: true
     },
     {
       name: "Logs",
       description: "Activity logs, analysis history, and interaction records",
-      syncFrequency: "hourly"
+      syncFrequency: "hourly",
+      readWrite: true
+    },
+    {
+      name: "Dictionaries",
+      description: "Terminology, acronyms, and domain-specific language",
+      syncFrequency: "realtime",
+      readWrite: true
     },
     {
       name: "Archives",
       description: "Historical data and deprecated materials",
-      syncFrequency: "weekly"
+      syncFrequency: "weekly",
+      readWrite: true
+    },
+    {
+      name: "Outputs",
+      description: "PRIMARY OUTPUT FOLDER - Generated reports, analysis results",
+      syncFrequency: "realtime",
+      readWrite: true,
+      primary: true
     }
   ]
 };
@@ -61,7 +63,7 @@ export const OAUTH_CONFIG = {
     'https://www.googleapis.com/auth/drive.file',
     'https://www.googleapis.com/auth/drive.metadata.readonly'
   ],
-  redirect_uri: 'http://localhost:3000/oauth2callback'
+  redirectUri: 'http://localhost:3000/auth/google/callback'
 };
 
 /**
@@ -82,7 +84,7 @@ export const SYNC_SETTINGS = {
   excludePatterns: [
     /^~\$/,  // Temp files
     /\.tmp$/,
-    /^\./ // Hidden files
+    /^\./    // Hidden files
   ]
 };
 
@@ -90,11 +92,26 @@ export const SYNC_SETTINGS = {
  * Get environment variables for Google Drive authentication
  */
 export function getGoogleEnv() {
-  return {
-    apiKey: import.meta.env.VITE_GOOGLE_API_KEY || process.env.GOOGLE_API_KEY,
-    personalRefreshToken: import.meta.env.VITE_GOOGLE_PERSONAL_REFRESH_TOKEN || process.env.GOOGLE_PERSONAL_REFRESH_TOKEN,
-    workRefreshToken: import.meta.env.VITE_GOOGLE_WORK_REFRESH_TOKEN || process.env.GOOGLE_WORK_REFRESH_TOKEN,
-    clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
-    clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET
-  };
+  // Check if running in Node.js (backend) or browser (frontend)
+  const isNode = typeof window === 'undefined';
+  
+  if (isNode) {
+    // Node.js environment - use process.env directly
+    return {
+      apiKey: process.env.GOOGLE_API_KEY || process.env.GOOGLE_DRIVE_API_KEY,
+      personalRefreshToken: process.env.GOOGLE_PERSONAL_REFRESH_TOKEN,
+      workRefreshToken: process.env.GOOGLE_WORK_REFRESH_TOKEN,
+      clientId: process.env.GOOGLE_DRIVE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_DRIVE_CLIENT_SECRET
+    };
+  } else {
+    // Browser environment - use import.meta.env (Vite)
+    return {
+      apiKey: import.meta.env.VITE_GOOGLE_API_KEY,
+      personalRefreshToken: import.meta.env.VITE_GOOGLE_PERSONAL_REFRESH_TOKEN,
+      workRefreshToken: import.meta.env.VITE_GOOGLE_WORK_REFRESH_TOKEN,
+      clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      clientSecret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET
+    };
+  }
 }

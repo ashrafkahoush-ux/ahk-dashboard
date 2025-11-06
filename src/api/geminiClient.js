@@ -199,6 +199,9 @@ function parseGeminiResponse(text) {
       
       // Validate structure
       if (parsed.investorBrief && parsed.nextActions && parsed.riskMap) {
+        // Ensure summary and fullText are included
+        parsed.summary = parsed.investorBrief; // Executive summary
+        parsed.fullText = formatFullReport(parsed); // Full formatted text
         return parsed;
       }
     }
@@ -214,13 +217,64 @@ function parseGeminiResponse(text) {
 }
 
 /**
+ * Format full report from structured analysis
+ */
+function formatFullReport(analysis) {
+  const { investorBrief, nextActions, riskMap, investorInsights, recommendations } = analysis;
+  
+  let report = `Executive Summary: ${investorBrief}\n\n`;
+  
+  if (nextActions && nextActions.length > 0) {
+    report += `Next Actions:\n`;
+    nextActions.forEach((action, i) => {
+      report += `${i + 1}. ${action}\n`;
+    });
+    report += `\n`;
+  }
+  
+  if (riskMap) {
+    if (riskMap.high && riskMap.high.length > 0) {
+      report += `High Priority Risks:\n`;
+      riskMap.high.forEach((risk, i) => {
+        report += `${i + 1}. ${risk}\n`;
+      });
+      report += `\n`;
+    }
+    if (riskMap.medium && riskMap.medium.length > 0) {
+      report += `Medium Priority Items:\n`;
+      riskMap.medium.forEach((item, i) => {
+        report += `${i + 1}. ${item}\n`;
+      });
+      report += `\n`;
+    }
+  }
+  
+  if (investorInsights && investorInsights.length > 0) {
+    report += `Investor Insights:\n`;
+    investorInsights.forEach((insight, i) => {
+      report += `${i + 1}. ${insight}\n`;
+    });
+    report += `\n`;
+  }
+  
+  if (recommendations && recommendations.length > 0) {
+    report += `Strategic Recommendations:\n`;
+    recommendations.forEach((rec, i) => {
+      report += `${i + 1}. ${rec}\n`;
+    });
+  }
+  
+  return report.trim();
+}
+
+/**
  * Extract structured data from unstructured Gemini text
  */
 function extractStructuredData(text) {
   // Simple extraction logic - can be enhanced
   const lines = text.split('\n').filter(l => l.trim());
   
-  return {
+  const analysis = {
     investorBrief: lines[0] || 'Analysis completed. See details below.',
     nextActions: lines.slice(1, 4).map(l => l.replace(/^[-*•]\s*/, '').trim()),
     riskMap: {
@@ -231,6 +285,12 @@ function extractStructuredData(text) {
     investorInsights: lines.slice(4, 7).map(l => l.replace(/^[-*•]\s*/, '').trim()),
     recommendations: lines.slice(7, 9).map(l => l.replace(/^[-*•]\s*/, '').trim())
   };
+  
+  // Add summary and fullText
+  analysis.summary = analysis.investorBrief;
+  analysis.fullText = formatFullReport(analysis);
+  
+  return analysis;
 }
 
 /**
@@ -249,7 +309,7 @@ function generateMockAnalysis(context) {
   const avgProgress = data.metrics?.avgProgress || 0;
   const activeProjects = data.projects?.length || 0;
   
-  return {
+  const analysis = {
     investorBrief: `Portfolio health: ${activeProjects} active projects with ${avgProgress}% average progress. ${overdueTasks.length} tasks overdue. Strong momentum in localization and logistics tracks.`,
     nextActions: [
       data.roadmap?.find(t => t.status === 'in-progress')?.title || 'Review project priorities and update roadmap',
@@ -271,6 +331,12 @@ function generateMockAnalysis(context) {
       'Leverage completed feasibility studies to approach Series A investors'
     ]
   };
+  
+  // Add summary and fullText
+  analysis.summary = analysis.investorBrief;
+  analysis.fullText = formatFullReport(analysis);
+  
+  return analysis;
 }
 
 /**

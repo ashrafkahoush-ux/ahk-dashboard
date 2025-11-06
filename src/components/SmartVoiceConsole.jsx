@@ -1,362 +1,180 @@
-import React, { useEffect, useRef, useState } from "react";
-import { speak, stopSpeak, pickLang } from "../ai/speech";
-import { enhanceResponse, getGreeting, getConfirmation } from "../ai/responseEnhancer";
-import EmmaAvatar from "./EmmaAvatar";
-import EmmaNotifications, { useEmmaNotifications } from "./EmmaNotifications";
-import emmaMemory from "../ai/emmaMemory";
-import { usePageContext, getContextualGreeting } from "../ai/contextAwareness";
-import { 
-  initializeMemory, 
-  getRules, 
-  remember, 
-  generateRuleBasedResponse,
-  getPreferredName 
-} from "../ai/memoryCore.mjs";
-import { 
-  logInteraction, 
-  summarizeLogs, 
-  updateStyleModel,
-  recallStyle 
-} from "../ai/EmmaCore.mjs";
-import { startSelfLearning } from "../ai/selfLearner.mjs";
+﻿// src/components/SmartVoiceConsole.jsx
+import React, { useRef, useState } from "react";
+import { sttTranscribe, ttsSpeak, detectIntent } from "../ai/voiceEngine";
+import { runMultiAIAnalysis } from "../ai/orchestrator";
+import { speak as browserSpeak, stopSpeak } from "../ai/speech"; // keep as fallback for dev test
 
-export default function SmartVoiceConsole({ onCommand, uiLang = "en" }) {
-  const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
-  const [status, setStatus] = useState("Idle");
-  const [isOpen, setIsOpen] = useState(false);
-  const [emmaState, setEmmaState] = useState("idle"); // idle, listening, thinking, speaking
-  const [showParticles, setShowParticles] = useState(false);
-  const recRef = useRef(null);
-  const timeoutRef = useRef(null);
-  const lang = pickLang(uiLang);
-  const hasGreeted = useRef(false);
-  const pageContext = usePageContext(); // Context awareness
-  const { notifications, addNotification, dismissNotification } = useEmmaNotifications();
+function blobToBase64(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
+}
 
-  // Initialize Memory Core on mount
-  useEffect(() => {
-    const memory = initializeMemory();
-    const rules = getRules();
-    console.log('🧠 Emma Ground Rules Loaded:', rules);
-    console.log('📊 Total Rules:', rules.length, '(including self-learning Rules 11 & 12)');
-    remember('sessionStart', `Emma initialized for ${new Date().toLocaleString()}`);
-    
-    // Start self-learning scheduler (30-minute cycles)
-    startSelfLearning(30);
-    console.log('🧠 Emma v5 Self-Learning Intelligence activated');
-    
-    // Log initial learning insights
-    const insights = summarizeLogs();
-    console.log('📊 Emma Learning Insights:', insights);
-  }, []);
+export default function SmartVoiceConsole() {
+  const [status, setStatus] = useState("idle");
+  const [log, setLog] = useState([]);
+  const mediaRef = useRef(null);
+  const chunksRef = useRef([]);
 
-  // Greet user when opening console first time
-  useEffect(() => {
-    if (isOpen && !hasGreeted.current) {
-      emmaMemory.recordCheckIn(); // Track user interaction
-      
-      // Check for proactive suggestions
-      const suggestions = emmaMemory.getProactiveSuggestions();
-      if (suggestions.length > 0 && Math.random() > 0.5) {
-        // Show suggestion 50% of the time to avoid being annoying
-        const suggestion = suggestions[0];
-        const enhancedMsg = generateRuleBasedResponse(suggestion.message, { type: 'suggestion' });
-        speak(enhanceResponse(enhancedMsg), { lang, gender: "female" });
-        remember('suggestion_given', suggestion);
-        
-        // Add to notifications
-        addNotification({
-          type: 'suggestion',
-          message: suggestion.message,
-          action: suggestion.action,
-        });
-      } else {
-        // Use contextual greeting based on current page + Memory Core
-        const preferredName = getPreferredName();
-        const greeting = getContextualGreeting(pageContext, preferredName);
-        const enhancedGreeting = generateRuleBasedResponse(greeting, { 
-          type: 'greeting', 
-          page: pageContext.page 
-        });
-        speak(enhanceResponse(enhancedGreeting), { lang, gender: "female" });
-        remember('greeting_given', { greeting: enhancedGreeting, page: pageContext.page });
-      }
-      hasGreeted.current = true;
+  const startPTT = async () => {
+    try {
+      setStatus("listening");
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mr = new MediaRecorder(stream);
+      mediaRef.current = mr;
+      chunksRef.current = [];
+      mr.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          chunksRef.current.push(e.data);
+        }
+      };
+      mr.onstop = async () => {
+        try {
+          // Check if we have valid audio data
+          if (chunksRef.current.length === 0) {
+            append("⚠️ No audio recorded. Please speak while holding the button.");
+            setStatus("idle");
+            return;
+          }
+
+          const blob = new Blob(chunksRef.current, { type: "audio/webm" });
+          
+          // Check blob size
+          if (blob.size === 0 || blob.size < 100) {
+            append("⚠️ Audio too short. Please speak longer.");
+            setStatus("idle");
+            return;
+          }
+
+          append("🎙️ Processing audio (" + Math.round(blob.size / 1024) + " KB)...");
+          
+          const b64 = await blobToBase64(blob);
+          const response = await sttTranscribe(b64);
+          const text = response.text || "";
+          
+          if (text) {
+            append("You: " + text);
+            const cleaned = text.replace(/^(emma|ايما|يا ايما|اما)\s*/i, "").trim();
+            const intentObj = await detectIntent(cleaned);
+            await routeIntent(intentObj, cleaned);
+          } else {
+            append("⚠️ No speech detected. Please try again.");
+          }
+          
+          setStatus("idle");
+        } catch (err) {
+          console.error("STT Error:", err);
+          append("❌ Transcription failed: " + (err.response?.data?.error || err.message));
+          setStatus("idle");
+        }
+      };
+      mr.start();
+    } catch (err) {
+      console.error("Microphone Error:", err);
+      append("❌ Microphone access denied or unavailable");
+      setStatus("idle");
     }
-  }, [isOpen]);
+  };
 
-  const startListening = () => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) {
-      const errorMsg = uiLang === "ar" ? "التعرّف الصوتي غير مدعوم" : "Voice recognition not supported";
-      speak(enhanceResponse(errorMsg), { lang, gender: "female" });
-      return;
+  const stopPTT = () => {
+    try {
+      if (mediaRef.current && mediaRef.current.state !== "inactive") {
+        mediaRef.current.stop();
+        // Stop all tracks to release microphone
+        const stream = mediaRef.current.stream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+      }
+    } catch (err) {
+      console.error("Error stopping recording:", err);
     }
-    const rec = new SR();
-    recRef.current = rec;
-    rec.lang = lang;
-    rec.interimResults = true;
-    rec.continuous = true;
-
-    rec.onstart = () => {
-      setIsListening(true);
-      setEmmaState("listening");
-      setStatus(uiLang === "ar" ? "جارٍ الاستماع..." : "Listening...");
-      setTranscript("");
-      resetTimer();
-    };
-
-    rec.onresult = (e) => {
-      const text = Array.from(e.results).map(r => r[0].transcript).join(" ");
-      setTranscript(text);
-      resetTimer();
-
-      // Emma start analysis
-      if (/emma[, ]*\s*start analysis/i.test(text) || /إمّا[, ]*\s*(ابدئي|ابدأ)\s*التحليل/i.test(text)) {
-        setEmmaState("thinking");
-        const msg = uiLang === "ar" ? "جارٍ تشغيل التحليل" : "Starting analysis";
-        const enhancedMsg = generateRuleBasedResponse(msg, { type: 'action', includesTasks: true });
-        speak(enhanceResponse(enhancedMsg, { addPersonality: true }), { lang, gender: "female" });
-        emmaMemory.recordCommand("run-analysis"); // Track command
-        remember('command_executed', { command: 'run-analysis', timestamp: Date.now() });
-        logInteraction({ command: 'run-analysis', accepted: true, context: pageContext.page }); // v5 learning
-        stopListening();
-        onCommand?.("run-analysis");
-        // Periodic style update (10% chance)
-        if (Math.random() < 0.1) updateStyleModel();
-      } 
-      // Daily report request
-      else if (/daily report/i.test(text) || /التقرير اليومي/i.test(text)) {
-        setEmmaState("speaking");
-        const msg = uiLang === "ar" ? "هل ترغب بعرضه أم إرساله بالبريد؟" : "Would you like it displayed or emailed?";
-        speak(enhanceResponse(msg), { lang, gender: "female" });
-        emmaMemory.recordCommand("daily-report-request"); // Track command
-        logInteraction({ command: 'daily-report', accepted: true, context: pageContext.page }); // v5 learning
-        setStatus("Awaiting choice");
-      } 
-      // Display choice
-      else if (/display/i.test(text) || /عرض/i.test(text)) {
-        const confirm = getConfirmation();
-        const enhancedConfirm = generateRuleBasedResponse(confirm, { type: 'action' });
-        speak(enhanceResponse(enhancedConfirm), { lang, gender: "female" });
-        setEmmaState("working");
-        emmaMemory.recordCommand("display-report"); // Track command
-        emmaMemory.recordReportGeneration(); // Track report generation
-        emmaMemory.setPreference('reportDelivery', 'display'); // Learn preference
-        remember('report_generated', { type: 'display', timestamp: Date.now() });
-        logInteraction({ command: 'display-report', accepted: true, context: pageContext.page }); // v5 learning
-        onCommand?.("display-report");
-        // Show celebration after command completes
-        setTimeout(() => {
-          setEmmaState("happy");
-          setShowParticles(true);
-          remember('milestone', { event: 'report_displayed_successfully', timestamp: Date.now() });
-          setTimeout(() => {
-            setShowParticles(false);
-            setEmmaState("idle");
-          }, 2000);
-        }, 1500);
-        stopListening();
-      } 
-      // Email choice
-      else if (/email/i.test(text) || /بريد/i.test(text)) {
-        const confirm = getConfirmation();
-        speak(enhanceResponse(confirm), { lang, gender: "female" });
-        setEmmaState("working");
-        emmaMemory.recordCommand("email-report"); // Track command
-        emmaMemory.recordReportGeneration(); // Track report generation
-        emmaMemory.setPreference('reportDelivery', 'email'); // Learn preference
-        onCommand?.("email-report");
-        // Show celebration after command completes
-        setTimeout(() => {
-          setEmmaState("happy");
-          setShowParticles(true);
-          setTimeout(() => {
-            setShowParticles(false);
-            setEmmaState("idle");
-          }, 2000);
-        }, 1500);
-        stopListening();
-      } 
-      // Risk analysis
-      else if (/risk/i.test(text) || /المخاطر/i.test(text)) {
-        setEmmaState("thinking");
-        const msg = uiLang === "ar" ? "جارٍ تحليل المخاطر" : "Running risk analysis";
-        speak(enhanceResponse(msg), { lang, gender: "female" });
-        onCommand?.("risk-analysis");
-        stopListening();
-      } 
-      // Read report
-      else if (/read( the)? report/i.test(text) || /اقرئي التقرير/i.test(text)) {
-        setEmmaState("speaking");
-        const msg = uiLang === "ar" ? "جارٍ قراءة التقرير" : "Reading the report now";
-        speak(enhanceResponse(msg), { lang, gender: "female" });
-        onCommand?.("read-report");
-        stopListening();
-      }
-      // Show reports archive
-      else if (/show reports|view archive/i.test(text) || /أظهر التقارير/i.test(text)) {
-        const msg = uiLang === "ar" ? "فتح أرشيف التقارير" : "Opening reports archive";
-        speak(enhanceResponse(msg), { lang, gender: "female" });
-        emmaMemory.recordCommand("show-reports"); // Track command
-        onCommand?.("show-reports");
-        stopListening();
-      }
-      // PILOT: Project-scoped fusion commands
-      else if (/analyze|fusion/i.test(text) && /germex/i.test(text)) {
-        setEmmaState("thinking");
-        const msg = "Running fusion analysis for Germex";
-        speak(enhanceResponse(msg), { lang, gender: "female" });
-        onCommand?.("fusion-germex");
-        logInteraction({ command: 'fusion-germex', accepted: true, context: 'voice' });
-        stopListening();
-      }
-      else if (/analyze|fusion/i.test(text) && /shift.*ev/i.test(text)) {
-        setEmmaState("thinking");
-        const msg = "Running fusion analysis for Shift EV Egypt";
-        speak(enhanceResponse(msg), { lang, gender: "female" });
-        onCommand?.("fusion-shiftev");
-        logInteraction({ command: 'fusion-shiftev', accepted: true, context: 'voice' });
-        stopListening();
-      }
-      // PILOT: Report generation commands
-      else if (/investor report/i.test(text) && /germex/i.test(text)) {
-        setEmmaState("working");
-        const msg = "Generating investor report for Germex";
-        speak(enhanceResponse(msg), { lang, gender: "female" });
-        onCommand?.("report-germex-investor");
-        logInteraction({ command: 'report-germex-investor', accepted: true, context: 'voice' });
-        stopListening();
-      }
-      else if (/risk.*analysis/i.test(text) && /shift.*ev/i.test(text)) {
-        setEmmaState("thinking");
-        const msg = "Running risk analysis for Shift EV Egypt";
-        speak(enhanceResponse(msg), { lang, gender: "female" });
-        onCommand?.("risk-shiftev");
-        logInteraction({ command: 'risk-shiftev', accepted: true, context: 'voice' });
-        stopListening();
-      }
-    };
-
-    rec.onerror = (e) => {
-      setStatus(`Error: ${e.error}`);
-      stopListening();
-    };
-
-    rec.onend = () => {
-      setIsListening(false);
-      recRef.current = null;
-    };
-
-    rec.start();
   };
 
-  const stopListening = (reason = "") => {
-    clearTimeout(timeoutRef.current);
-    try { recRef.current?.stop(); } catch {}
-    recRef.current = null;
-    setIsListening(false);
-    setEmmaState("idle");
-    if (reason) console.log("🎤 Voice stopped:", reason);
-  };
-
-  const resetTimer = () => {
-    clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => {
-      stopListening("Silence timeout");
-      const msg = uiLang === "ar" ? "سأكون هنا إذا احتجتني" : "I'll be here if you need me";
-      speak(enhanceResponse(msg), { lang, gender: "female" });
-    }, 60000);
-  };
-
-  const closeConsole = () => {
-    stopSpeak();
-    stopListening("Manual close");
-    setIsOpen(false);
-    setEmmaState("idle");
-  };
-
-  useEffect(() => () => stopListening("Unmount"), []);
-
-  // Emma state indicator styles
-  const getEmmaIndicator = () => {
-    switch (emmaState) {
-      case "listening":
-        return { color: "#10b981", icon: "🎤", label: "Listening" };
-      case "thinking":
-        return { color: "#f59e0b", icon: "🧠", label: "Thinking" };
-      case "speaking":
-        return { color: "#8b5cf6", icon: "💬", label: "Speaking" };
+  const routeIntent = async (intentObj, cleaned) => {
+    switch (intentObj.intent) {
+      case "WAKE_ACK":
+        append("Emma: Yes, I'm here.");
+        return ttsSpeak("Yes, I'm here.");
+      case "START_ANALYSIS":
+        append("Emma: Starting analysis...");
+        await ttsSpeak("Starting analysis.");
+        // Call your existing analysis flow
+        try {
+          const ctx = {}; // Build your context here
+          const report = await runMultiAIAnalysis(ctx);
+          append("Summary: " + (report.summary || "Analysis complete"));
+          await ttsSpeak(report.summary || "Analysis complete.");
+        } catch (e) {
+          console.error("Analysis error:", e);
+          append("Emma: Analysis failed.");
+        }
+        return;
+      case "READ_REPORT":
+        append("Emma: Reading the investor brief.");
+        return ttsSpeak("Reading the investor brief.");
+      case "NAV_DASHBOARD":
+        append("Emma: Opening dashboard.");
+        await ttsSpeak("Opening dashboard.");
+        window.location.href = "/dashboard";
+        return;
+      case "NAV_STRATEGY":
+        append("Emma: Opening strategy.");
+        await ttsSpeak("Opening strategy.");
+        window.location.href = "/strategy";
+        return;
+      case "NAV_REPORTS":
+        append("Emma: Opening reports.");
+        await ttsSpeak("Opening reports.");
+        window.location.href = "/reports";
+        return;
+      case "STOP":
+        append("Emma: Stopping.");
+        return ttsSpeak("Stopping.");
       default:
-        return { color: "#6b7280", icon: "😊", label: "Ready" };
+        append("Emma: I didn't catch that, try again.");
+        return ttsSpeak("I didn't catch that, try again.");
     }
   };
 
-  const indicator = getEmmaIndicator();
+  function append(line) {
+    setLog((prev) => [...prev, line].slice(-50));
+  }
 
   return (
-    <>
-      {/* Emma Bot Button with Avatar and Notifications */}
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => setIsOpen(prev => !prev)}
-          className="relative hover:scale-110 transition-transform"
-          title="Emma Voice Console"
-        >
-          <EmmaAvatar mood={emmaState} showParticles={showParticles} />
-          
-          {/* Notification Badge */}
-          <EmmaNotifications
-            notifications={notifications}
-            onDismiss={dismissNotification}
-            onAction={(action) => {
-              onCommand?.(action);
-              setIsOpen(false);
-            }}
-          />
-        </button>
+    <div className="emma-voice p-4 bg-gray-800 rounded-lg">
+      <button
+        onMouseDown={startPTT}
+        onMouseUp={stopPTT}
+        className="px-4 py-2 rounded bg-purple-600 hover:bg-purple-500 text-white font-semibold"
+      >
+        🎙️ Hold to Talk (Hybrid Whisper)
+      </button>
+      <span className="ml-3 text-sm text-gray-300">
+        {status === "listening" ? "Listening..." : "Ready"}
+      </span>
+      <button
+        onClick={() => browserSpeak("If you can hear this, TTS fallback works.")}
+        className="ml-2 px-3 py-2 rounded bg-green-600 hover:bg-green-500 text-white text-sm"
+      >
+        🧪 Test Browser TTS
+      </button>
+      <button
+        onClick={() => stopSpeak("manual")}
+        className="ml-2 px-3 py-2 rounded bg-red-600 hover:bg-red-500 text-white text-sm"
+      >
+        ⏹ Stop
+      </button>
+      <div className="mt-4 log bg-gray-900 p-3 rounded max-h-64 overflow-y-auto">
+        {log.length === 0 && <div className="text-gray-500 text-sm">Voice log will appear here...</div>}
+        {log.map((l, i) => (
+          <div key={i} className="text-sm text-gray-200 py-1">
+            {l}
+          </div>
+        ))}
       </div>
-
-      {/* Voice Console Panel */}
-      {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] p-4 rounded-2xl shadow-2xl bg-gradient-to-br from-[#0b1020] via-[#1e1b4b] to-[#0b1020] text-white border border-purple-500/30">
-          {/* Header with Emma Status */}
-          <div className="flex justify-between items-center mb-3">
-            <div className="flex items-center gap-2">
-              <div 
-                className="h-3 w-3 rounded-full animate-pulse" 
-                style={{ backgroundColor: indicator.color }}
-              />
-              <span className="font-semibold text-lg">Emma</span>
-              <span className="text-xs opacity-60">{indicator.icon} {indicator.label}</span>
-            </div>
-            <div className="space-x-2">
-              <button
-                onClick={isListening ? () => stopListening("Manual stop") : startListening}
-                className={`px-3 py-1 rounded text-sm transition-all ${isListening ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
-              >
-                {isListening ? (uiLang === "ar" ? "إيقاف" : "Stop") : (uiLang === "ar" ? "تحدث" : "Speak")}
-              </button>
-              <button
-                onClick={closeConsole}
-                className="px-3 py-1 rounded text-sm bg-slate-700 hover:bg-slate-600"
-              >
-                {uiLang === "ar" ? "إغلاق" : "Close"}
-              </button>
-            </div>
-          </div>
-
-          <div className="text-xs opacity-70 mb-1">{status}</div>
-          <div className="bg-white/5 rounded-lg p-2 h-24 overflow-y-auto text-sm font-mono">{transcript || "..."}</div>
-          
-          <div className="mt-3 text-xs text-gray-400">
-            💡 {uiLang === "ar" 
-              ? 'جرب: "إمّا، ابدئي التحليل" أو "اقرئي التقرير"'
-              : 'Try: "Emma, start analysis" or "read the report"'}
-          </div>
-        </div>
-      )}
-    </>
+    </div>
   );
 }

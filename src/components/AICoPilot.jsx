@@ -162,6 +162,17 @@ export default function AICoPilot() {
       console.log('✅ Analysis complete:', analysis);
       
       setAnalysis(analysis);
+      
+      // ✅ Always speak Emma's analysis investor brief
+      try {
+        if (analysis && analysis.investorBrief) {
+          speak(analysis.investorBrief, { lang: pickLang(currentLanguage), gender: "female" });
+          console.log('🔊 Speaking investor brief');
+        }
+      } catch (e) {
+        console.warn("Speech output failed:", e);
+      }
+      
       setLastRun(new Date().toISOString());
       
       // Save to localStorage
@@ -220,6 +231,17 @@ export default function AICoPilot() {
       console.log('✅ Fusion Analysis complete:', fusionResult);
       
       setFusionReport(fusionResult);
+      
+      // ✅ Always speak Emma's fusion report summary
+      try {
+        if (fusionResult && fusionResult.summary) {
+          speak(fusionResult.summary, { lang: pickLang(currentLanguage), gender: "female" });
+          console.log('🔊 Speaking fusion report summary');
+        }
+      } catch (e) {
+        console.warn("Speech output failed:", e);
+      }
+      
       setLastRun(new Date().toISOString());
       
       // Save to localStorage

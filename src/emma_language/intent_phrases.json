@@ -1,0 +1,311 @@
+{
+  "intents": {
+    "START_ANALYSIS": {
+      "phrases": [
+        "start analysis",
+        "begin analysis",
+        "run analysis",
+        "launch analysis",
+        "start the analysis",
+        "kick off analysis",
+        "initiate analysis",
+        "fire up analysis",
+        "commence analysis",
+        "go ahead and analyze",
+        "let's analyze",
+        "analyze now",
+        "run the analysis",
+        "execute analysis",
+        "ابدئي التحليل",
+        "ابدأي التحليل",
+        "شغلي التحليل",
+        "ابدا التحليل",
+        "حللي",
+        "ابدي بالتحليل"
+      ],
+      "keywords": ["start", "begin", "run", "analysis", "analyze", "ابدئي", "حللي", "التحليل"],
+      "priority": "high"
+    },
+    "READ_REPORT": {
+      "phrases": [
+        "read",
+        "read report",
+        "read the report",
+        "show report",
+        "display report",
+        "review report",
+        "check report",
+        "go through report",
+        "brief me",
+        "executive summary",
+        "report summary",
+        "tell me the insights",
+        "give me the report",
+        "what's in the report",
+        "summarize report",
+        "show me the findings",
+        "give me insights",
+        "what did we find",
+        "what did we discover",
+        "اقرئي التقرير",
+        "اقرأي التقرير",
+        "اعرضي التقرير",
+        "ملخص",
+        "الخلاصة",
+        "أعطيني الخلاصة",
+        "وش في التقرير"
+      ],
+      "keywords": ["read", "report", "brief", "summary", "findings", "اقرئي", "التقرير", "ملخص"],
+      "priority": "high"
+    },
+    "NEXT_ACTIONS": {
+      "phrases": [
+        "what do I do now",
+        "next steps",
+        "what's next",
+        "what should I do",
+        "what do I need to do",
+        "action items",
+        "what are the actions",
+        "next actions",
+        "what comes next",
+        "what do we do",
+        "tell me what to do",
+        "ما الخطوة التالية",
+        "ايه اللي لازم اعمله",
+        "ما العمل",
+        "الخطوات القادمة",
+        "ايش بعدين",
+        "شو اسوي"
+      ],
+      "keywords": ["next", "actions", "steps", "do", "what", "ما", "الخطوة", "التالية"],
+      "priority": "high"
+    },
+    "REPEAT": {
+      "phrases": [
+        "repeat",
+        "say again",
+        "say that again",
+        "one more time",
+        "repeat that",
+        "again",
+        "replay",
+        "can you repeat",
+        "didn't catch that",
+        "come again",
+        "أعيدي",
+        "اعيدي",
+        "كرري",
+        "مرة تانية",
+        "تاني",
+        "مرة ثانية"
+      ],
+      "keywords": ["repeat", "again", "replay", "أعيدي", "كرري", "مرة"],
+      "priority": "medium"
+    },
+    "STOP": {
+      "phrases": [
+        "stop",
+        "cancel",
+        "enough",
+        "halt",
+        "quit",
+        "end",
+        "cease",
+        "abort",
+        "nevermind",
+        "forget it",
+        "توقفي",
+        "بس",
+        "كفاية",
+        "خلاص",
+        "اوقفي",
+        "الغي"
+      ],
+      "keywords": ["stop", "cancel", "enough", "توقفي", "بس", "كفاية"],
+      "priority": "urgent"
+    },
+    "DAILY_REPORT": {
+      "phrases": [
+        "daily report",
+        "today's report",
+        "report for today",
+        "daily brief",
+        "daily summary",
+        "daily update",
+        "what happened today",
+        "today's summary",
+        "التقرير اليومي",
+        "تقرير اليوم",
+        "ملخص اليوم"
+      ],
+      "keywords": ["daily", "today", "اليومي", "اليوم"],
+      "priority": "high"
+    },
+    "DISPLAY_REPORT": {
+      "phrases": [
+        "display it",
+        "show it",
+        "display report",
+        "show on screen",
+        "put it on screen",
+        "I want to see it",
+        "display",
+        "اعرضيه",
+        "ورّيني",
+        "على الشاشة"
+      ],
+      "keywords": ["display", "show", "screen", "اعرضي", "ورّي"],
+      "priority": "medium"
+    },
+    "EMAIL_REPORT": {
+      "phrases": [
+        "email it",
+        "send it",
+        "email report",
+        "send report",
+        "send by email",
+        "email me",
+        "send to email",
+        "ابعتيه",
+        "ارسليه",
+        "ابعتي التقرير"
+      ],
+      "keywords": ["email", "send", "ابعتي", "ارسلي"],
+      "priority": "medium"
+    },
+    "RISK_ANALYSIS": {
+      "phrases": [
+        "risk analysis",
+        "analyze risks",
+        "check risks",
+        "what are the risks",
+        "risk assessment",
+        "identify risks",
+        "show risks",
+        "تحليل المخاطر",
+        "ايه المخاطر",
+        "المخاطر"
+      ],
+      "keywords": ["risk", "risks", "المخاطر"],
+      "priority": "high"
+    },
+    "SHOW_REPORTS": {
+      "phrases": [
+        "show reports",
+        "open reports",
+        "reports archive",
+        "view reports",
+        "show archive",
+        "past reports",
+        "report history",
+        "اعرضي التقارير",
+        "أرشيف التقارير"
+      ],
+      "keywords": ["archive", "reports", "history", "أرشيف"],
+      "priority": "medium"
+    },
+    "FUSION_GERMEX": {
+      "phrases": [
+        "fusion germex",
+        "analyze germex",
+        "germex analysis",
+        "run germex",
+        "germex fusion",
+        "حللي جرمكس",
+        "تحليل جرمكس"
+      ],
+      "keywords": ["fusion", "germex", "جرمكس"],
+      "priority": "high"
+    },
+    "FUSION_SHIFTEV": {
+      "phrases": [
+        "fusion shiftev",
+        "analyze shiftev",
+        "shift ev analysis",
+        "run shiftev",
+        "shiftev fusion",
+        "shift egypt",
+        "حللي شفت اي في",
+        "تحليل شفت"
+      ],
+      "keywords": ["fusion", "shiftev", "shift", "ev", "شفت"],
+      "priority": "high"
+    },
+    "REPORT_GERMEX_INVESTOR": {
+      "phrases": [
+        "germex investor report",
+        "investor report germex",
+        "germex for investors",
+        "تقرير المستثمرين جرمكس"
+      ],
+      "keywords": ["germex", "investor", "report", "المستثمرين"],
+      "priority": "high"
+    },
+    "RISK_SHIFTEV": {
+      "phrases": [
+        "shiftev risks",
+        "shift ev risks",
+        "risk analysis shiftev",
+        "مخاطر شفت"
+      ],
+      "keywords": ["shiftev", "shift", "risk", "مخاطر"],
+      "priority": "high"
+    },
+    "GREETING": {
+      "phrases": [
+        "hello",
+        "hi",
+        "hey",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "مرحبا",
+        "أهلاً",
+        "هاي",
+        "صباح الخير",
+        "مساء الخير"
+      ],
+      "keywords": ["hello", "hi", "hey", "مرحبا", "أهلاً"],
+      "priority": "low"
+    },
+    "STATUS": {
+      "phrases": [
+        "how are you",
+        "what's your status",
+        "are you ready",
+        "are you there",
+        "can you hear me",
+        "كيفك",
+        "كيف حالك",
+        "موجودة"
+      ],
+      "keywords": ["how", "status", "ready", "كيف", "موجودة"],
+      "priority": "low"
+    }
+  },
+  "natural_patterns": {
+    "can_you": ["can you", "could you", "would you", "will you", "ممكن", "تقدري"],
+    "please": ["please", "kindly", "من فضلك", "لو سمحتي"],
+    "want": ["I want", "I need", "I'd like", "عايز", "أريد", "ابي"],
+    "lets": ["let's", "let us", "how about", "خلينا", "يلا"],
+    "question": ["what", "when", "where", "who", "why", "how", "ايه", "ماذا", "متى", "كيف", "ليه"]
+  },
+  "contextual_hints": {
+    "urgency": ["now", "immediately", "urgent", "quickly", "fast", "حالاً", "دلوقتي", "بسرعة"],
+    "future": ["later", "tomorrow", "next", "schedule", "بكرة", "غداً", "لاحقاً"],
+    "past": ["yesterday", "last", "previous", "earlier", "الأمس", "امس", "قبل"],
+    "confirmation": ["yes", "yeah", "sure", "okay", "correct", "right", "نعم", "ايوه", "تمام", "صح"],
+    "negation": ["no", "not", "never", "don't", "لا", "مش", "ما"]
+  },
+  "fallback_patterns": {
+    "unclear": [
+      "I didn't fully catch that, Ash. Try saying it in another way — or tell me the goal, and I'll interpret.",
+      "لم أفهم ذلك تماماً. حاول إعادة الصياغة — أو أخبرني بالهدف، وسأفسره."
+    ],
+    "suggestions": [
+      "You can try phrases like: 'read the report', 'start analysis', or 'what's next'",
+      "يمكنك قول: 'اقرئي التقرير'، 'ابدئي التحليل'، أو 'ما الخطوة التالية'"
+    ]
+  }
+}

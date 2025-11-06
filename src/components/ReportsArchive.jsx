@@ -4,18 +4,67 @@ import ReportsManager from '../utils/reportsStorage';
 
 export default function ReportsArchive() {
   const [reports, setReports] = useState([]);
+  const [savedReports, setSavedReports] = useState([]);
   const [stats, setStats] = useState({ total: 0, pinned: 0, thisWeek: 0, totalViews: 0 });
-  const [filterView, setFilterView] = useState('all'); // all, pinned, thisWeek
+  const [filterView, setFilterView] = useState('all'); // all, pinned, thisWeek, saved
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
 
   useEffect(() => {
-    loadReports();
+    loadSavedReports();
+    
+    // Auto-refresh saved reports every 5 seconds to catch new saves
+    const refreshInterval = setInterval(() => {
+      loadSavedReports();
+    }, 5000);
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const loadReports = () => {
     const allReports = ReportsManager.getAllReports();
     setReports(allReports);
-    setStats(ReportsManager.getStats());
+    // Stats will be updated after savedReports loads
+  };
+
+  const loadSavedReports = async () => {
+    try {
+      console.log('🔍 Fetching reports from /api/list-reports...');
+      const response = await fetch('/api/list-reports');
+      console.log('📡 Response status:', response.status, response.statusText);
+      
+      if (!response.ok) {
+        console.error('❌ HTTP Error:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error body:', errorText);
+        return;
+      }
+      
+      const data = await response.json();
+      console.log('📦 Response data:', data);
+      
+      if (data.success) {
+        setSavedReports(data.reports);
+        console.log('✅ Loaded saved reports:', data.reports.length, data.reports);
+        
+        // Stats now prioritize backend reports
+        setStats({
+          total: data.reports.length,
+          pinned: 0,
+          thisWeek: data.reports.filter(r => {
+            const weekAgo = new Date();
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            return new Date(r.createdAt) > weekAgo;
+          }).length,
+          totalViews: 0
+        });
+      } else {
+        console.warn('⚠️ Success = false:', data);
+      }
+    } catch (error) {
+      console.error('❌ Failed to load saved reports:', error);
+    }
   };
 
   const handleDelete = (reportId) => {
@@ -37,7 +86,27 @@ export default function ReportsArchive() {
     console.log('📄 Viewing report:', report);
   };
 
-  const filteredReports = reports
+  const handleViewSaved = async (report) => {
+    try {
+      const response = await fetch(`/api/get-report/${report.filename}`);
+      const data = await response.json();
+      if (data.success) {
+        setSelectedReport({ ...report, content: data.content });
+        setShowReportModal(true);
+      }
+    } catch (error) {
+      console.error('Failed to load report:', error);
+    }
+  };
+
+  // Prioritize backend reports - only show localStorage if no backend reports
+  const allReportsForDisplay = filterView === 'saved' 
+    ? savedReports.map(r => ({ ...r, isSaved: true }))
+    : savedReports.length > 0 
+      ? savedReports.map(r => ({ ...r, isSaved: true }))
+      : reports;
+
+  const filteredReports = allReportsForDisplay
     .filter(report => {
       if (filterView === 'pinned') return report.isPinned;
       if (filterView === 'thisWeek') {
@@ -86,8 +155,8 @@ export default function ReportsArchive() {
             <div className="text-3xl font-bold mt-1">{stats.total}</div>
           </div>
           <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg p-4 text-white">
-            <div className="text-sm opacity-90">Pinned</div>
-            <div className="text-3xl font-bold mt-1">{stats.pinned}</div>
+            <div className="text-sm opacity-90">Saved to Archive</div>
+            <div className="text-3xl font-bold mt-1">{savedReports.length}</div>
           </div>
           <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg p-4 text-white">
             <div className="text-sm opacity-90">This Week</div>
@@ -103,14 +172,33 @@ export default function ReportsArchive() {
         <div className="bg-white/10 backdrop-blur-lg rounded-lg p-4 mb-6 flex flex-wrap items-center gap-4">
           <div className="flex gap-2">
             <button
+              onClick={() => {
+                loadSavedReports();
+              }}
+              className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 active:bg-green-800 transition-all shadow-lg hover:shadow-xl cursor-pointer font-semibold"
+              title="Refresh reports"
+            >
+              🔄 Refresh
+            </button>
+            <button
               onClick={() => setFilterView('all')}
-              className={`px-4 py-2 rounded-lg transition-all ${
+              className={`px-4 py-2 rounded-lg transition-all cursor-pointer ${
                 filterView === 'all' 
                   ? 'bg-purple-600 text-white' 
                   : 'bg-white/10 text-gray-300 hover:bg-white/20'
               }`}
             >
               All Reports
+            </button>
+            <button
+              onClick={() => setFilterView('saved')}
+              className={`px-4 py-2 rounded-lg transition-all cursor-pointer ${
+                filterView === 'saved' 
+                  ? 'bg-purple-600 text-white' 
+                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
+              }`}
+            >
+              💾 Saved Archive
             </button>
             <button
               onClick={() => setFilterView('pinned')}
@@ -187,11 +275,12 @@ export default function ReportsArchive() {
                           : 'bg-white/10 text-gray-300 hover:bg-white/20'
                       }`}
                       title={report.isPinned ? 'Unpin' : 'Pin'}
+                      style={{ display: report.isSaved ? 'none' : 'block' }}
                     >
                       📌
                     </button>
                     <button
-                      onClick={() => handleView(report)}
+                      onClick={() => report.isSaved ? handleViewSaved(report) : handleView(report)}
                       className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all"
                     >
                       View
@@ -200,6 +289,7 @@ export default function ReportsArchive() {
                       onClick={() => handleDelete(report.id)}
                       className="p-2 bg-red-600/80 text-white rounded-lg hover:bg-red-700 transition-all"
                       title="Delete"
+                      style={{ display: report.isSaved ? 'none' : 'block' }}
                     >
                       🗑️
                     </button>
@@ -214,6 +304,30 @@ export default function ReportsArchive() {
         <div className="mt-8 text-center text-sm text-gray-400">
           <p>💡 Reports are automatically deleted after 30 days unless pinned</p>
         </div>
+
+        {/* Report Modal */}
+        {showReportModal && selectedReport && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-slate-900 border border-purple-500/30 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+              <div className="p-6 border-b border-white/10 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-white">{selectedReport.title}</h2>
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  className="p-2 bg-white/10 rounded-lg hover:bg-white/20 transition-all text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1">
+                <div className="prose prose-invert max-w-none">
+                  <pre className="whitespace-pre-wrap text-gray-300 font-sans">
+                    {selectedReport.content}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

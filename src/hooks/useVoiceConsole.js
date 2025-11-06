@@ -3,11 +3,24 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const pickFemaleVoice = (locale) => {
   const voices = window.speechSynthesis?.getVoices?.() || [];
-  const prefer = voices.filter(v =>
-    (locale ? v.lang.toLowerCase().startsWith(locale.toLowerCase()) : true) &&
-    /female|sara|en-gb|uk|ar-xa|ze|laila|maya/i.test(`${v.name} ${v.voiceURI}`)
+  
+  // FORCE female voice - multiple patterns
+  const femaleVoice = voices.find(v =>
+    (locale ? v.lang.toLowerCase().startsWith(locale.toLowerCase().split('-')[0]) : true) &&
+    /(female|woman|samantha|zira|sara|karen|victoria|susan|allison|ava|serena|fiona)/i.test(v.name)
   );
-  return prefer[0] || voices.find(v => (locale ? v.lang.startsWith(locale) : true)) || voices[0] || null;
+  
+  if (femaleVoice) {
+    console.log('🎤 Emma voice selected:', femaleVoice.name);
+    return femaleVoice;
+  }
+  
+  // Fallback to any voice matching locale
+  const fallback = voices.find(v => (locale ? v.lang.startsWith(locale.split('-')[0]) : true)) || voices[0];
+  if (fallback) {
+    console.warn('⚠️ Using fallback voice:', fallback.name);
+  }
+  return fallback || null;
 };
 
 export function useVoiceConsole(opts = {}) {
@@ -36,6 +49,7 @@ export function useVoiceConsole(opts = {}) {
   const mediaStreamRef = useRef(null);
   const lastError = useRef(undefined);
   const speakingRef = useRef(false);
+  const completedRef = useRef(false); // Track if command was completed
 
   // simple intent router
   const localIntent = useCallback((text) => {
@@ -63,7 +77,7 @@ export function useVoiceConsole(opts = {}) {
     sourceRef.current = null;
     mediaStreamRef.current = null;
     if (audioCtxRef.current && audioCtxRef.current.state !== "closed") {
-      audioCtxRef.current.close();
+      audioCtxRef.current.close().catch(() => {}); // Ensure close completes
     }
     audioCtxRef.current = null;
   }, []);
@@ -78,6 +92,8 @@ export function useVoiceConsole(opts = {}) {
     stopAudioGraph();
     setState("idle");
     setInterim("");
+    setTranscript("");
+    completedRef.current = false;
     if (inactivityTimer.current) window.clearTimeout(inactivityTimer.current);
   }, [stopAudioGraph, stopRecognition]);
 
@@ -89,18 +105,25 @@ export function useVoiceConsole(opts = {}) {
     const voice = pickFemaleVoice(locale);
     if (voice) utter.voice = voice;
     utter.rate = 1.0;
-    utter.pitch = 1.02;
+    utter.pitch = 1.15; // Higher pitch for more feminine voice
     utter.onend = () => {
       speakingRef.current = false;
-      setState("idle");
+      // After speaking, transition to completed state and auto-close
+      setState("completed");
+      setTimeout(() => {
+        stop(); // Full cleanup
+      }, 500); // Brief delay to show completed state
     };
     utter.onerror = () => {
       speakingRef.current = false;
       setState("error");
+      setTimeout(() => {
+        stop();
+      }, 1000);
     };
     window.speechSynthesis.cancel();
     window.speechSynthesis.speak(utter);
-  }, [locale]);
+  }, [locale, stop]);
 
   const cancelSpeech = useCallback(() => {
     window.speechSynthesis?.cancel();
@@ -126,7 +149,7 @@ export function useVoiceConsole(opts = {}) {
     const maxSilentFrames = 120; // ~2s at 60fps
 
     const tick = () => {
-      if (!meterRef.current || state !== "listening") return;
+      if (!meterRef.current || state !== "listening" || completedRef.current) return;
       analyser.getByteTimeDomainData(data);
       // normalize energy
       let sum = 0;
@@ -138,7 +161,8 @@ export function useVoiceConsole(opts = {}) {
       if (rms < vadThreshold) {
         silentFrames++;
         if (silentFrames > maxSilentFrames) {
-          // user quiet for a while ⇒ stop listening
+          // user quiet for a while ⇒ complete session
+          completedRef.current = true;
           stop();
           return;
         }
@@ -154,8 +178,11 @@ export function useVoiceConsole(opts = {}) {
     if (!isSupported) return;
     if (speakingRef.current) cancelSpeech();
 
+    // Reset completion flag for new session
+    completedRef.current = false;
+
     const rec = new Recognition();
-    rec.continuous = true;
+    rec.continuous = false; // ONE-SHOT MODE: stop after first final result
     rec.interimResults = true;
     rec.lang = locale;
     rec.onresult = async (e) => {
@@ -179,7 +206,9 @@ export function useVoiceConsole(opts = {}) {
         if (text.startsWith(wakePhrase.toLowerCase())) {
           setTranscript("");
           setInterim("");
+          completedRef.current = true; // Mark as completed
           if (onIntent) {
+            setState("processing");
             const reply = await onIntent("wake", text);
             if (reply) await speak(reply);
           }
@@ -189,18 +218,30 @@ export function useVoiceConsole(opts = {}) {
         const intent = localIntent(text);
         if (intent !== "none" && onIntent) {
           setState("processing");
+          completedRef.current = true; // Mark as completed
           const reply = await onIntent(intent, text);
-          if (reply) await speak(reply);
+          if (reply) {
+            await speak(reply);
+          } else {
+            // No reply, just complete
+            setState("completed");
+            setTimeout(() => stop(), 500);
+          }
         }
       }
     };
     rec.onerror = (e) => {
       lastError.current = e?.error || "recognition_error";
       setState("error");
+      setTimeout(() => stop(), 1000);
     };
     rec.onend = () => {
-      // if push-to-talk we end silently; otherwise return idle
-      if (!pushToTalk) setState("idle");
+      // if completed, ensure cleanup happens
+      if (completedRef.current) {
+        setTimeout(() => stop(), 100);
+      } else if (!pushToTalk) {
+        setState("idle");
+      }
     };
     recRef.current = rec;
 
@@ -217,7 +258,7 @@ export function useVoiceConsole(opts = {}) {
     setState("listening");
     resetInactivity();
     try { rec.start(); } catch {}
-  }, [Recognition, cancelSpeech, isSupported, locale, localIntent, onIntent, pushToTalk, resetInactivity, speak, startVAD, wakePhrase]);
+  }, [Recognition, cancelSpeech, isSupported, locale, localIntent, onIntent, pushToTalk, resetInactivity, speak, startVAD, stop, wakePhrase]);
 
   const pttDown = useCallback(async () => {
     if (!pushToTalk) return;

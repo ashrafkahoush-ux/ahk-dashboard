@@ -12,6 +12,13 @@ export default defineConfig({
     port: 3000,
     open: true,
     middlewareMode: false,
+    // Proxy API calls to backend server
+    proxy: {
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      }
+    },
     // Dev-only API endpoint for voice task persistence
     configureServer(server) {
       // API: Save roadmap task (Enhanced for AI Task Orchestration)
