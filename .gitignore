@@ -17,6 +17,12 @@ dist-ssr
 .env.local
 .env.*.local
 
+# Google OAuth credentials and service accounts
+server/config/google_credentials.json
+server/config/*-service.json
+server/config/ahkllc-drive-service.json
+*.json.backup
+
 # Archive and maintenance logs (keep structure, ignore content)
 .archive/chat_history/*.json
 .archive/emma_memory/*.json
