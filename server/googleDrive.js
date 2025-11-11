@@ -110,3 +110,6 @@ export async function listOutputs(limit = 20) {
   });
   return res.data.files || [];
 }
+
+// Default export for drive instance
+export default google.drive({ version: 'v3', auth: getOAuth2() });
