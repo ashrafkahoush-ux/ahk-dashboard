@@ -1,23 +1,18 @@
 // server/routes/google-drive-routes.js
 import express from "express";
-import { drive, testDriveAccess } from "../google-drive-oauth.js";
+import drive from "../google-drive-oauth.js";
 
 const router = express.Router();
 
 // Simple test route to check auth and connectivity
 router.get("/status", async (req, res) => {
   try {
-    const result = await testDriveAccess();
-    if (result.success) {
-      res.json({ 
-        ok: true, 
-        message: "Google Drive Connected",
-        user: result.user.emailAddress,
-        displayName: result.user.displayName
-      });
-    } else {
-      res.status(500).json({ ok: false, error: result.error });
-    }
+    // Test Drive access by listing files
+    const result = await drive.files.list({ pageSize: 1, fields: 'user' });
+    res.json({ 
+      ok: true, 
+      message: "Google Drive Connected"
+    });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
