@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Cloud, CloudOff, RefreshCw, FolderOpen, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-
-const BACKEND_URL = "http://localhost:4000";
+import { API_BASE_URL } from '../config/emmaConfig';
 
 export default function GoogleDriveSync() {
   const [driveStatus, setDriveStatus] = useState({
@@ -27,8 +26,8 @@ export default function GoogleDriveSync() {
 
   const checkDriveStatus = async () => {
     try {
-      console.log('[GoogleDriveSync] Fetching status from:', `${BACKEND_URL}/api/google-drive/status`);
-      const response = await fetch(`${BACKEND_URL}/api/google-drive/status`);
+      console.log('[GoogleDriveSync] Fetching status from:', `${API_BASE_URL}/api/google-drive/status`);
+      const response = await fetch(`${API_BASE_URL}/api/google-drive/status`);
       
       console.log('[GoogleDriveSync] Response status:', response.status);
       console.log('[GoogleDriveSync] Response headers:', response.headers);
@@ -63,8 +62,8 @@ export default function GoogleDriveSync() {
     setError(null);
     
     try {
-      console.log('[GoogleDriveSync] Starting sync to:', `${BACKEND_URL}/api/google-drive/sync`);
-      const response = await fetch(`${BACKEND_URL}/api/google-drive/sync`, {
+      console.log('[GoogleDriveSync] Starting sync to:', `${API_BASE_URL}/api/google-drive/sync`);
+      const response = await fetch(`${API_BASE_URL}/api/google-drive/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });

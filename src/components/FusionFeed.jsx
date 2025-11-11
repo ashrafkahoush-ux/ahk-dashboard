@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { Activity, TrendingUp, Database, Cloud, AlertTriangle } from "lucide-react";
+import { API_BASE_URL } from '../config/emmaConfig';
 
 const FusionFeed = () => {
   const [fusionData, setFusionData] = useState(null);
@@ -20,7 +21,7 @@ const FusionFeed = () => {
     console.log("🔷 FusionFeed: Initializing WebSocket connection...");
     
     // Connect to backend WebSocket
-    const socket = io("http://localhost:4000", {
+    const socket = io(API_BASE_URL, {
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,

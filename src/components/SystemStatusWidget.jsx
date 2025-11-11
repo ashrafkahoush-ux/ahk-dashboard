@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Activity, Server, Cloud, Zap, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../config/emmaConfig';
 
 /**
  * SystemStatusWidget - Real-time system health monitoring
@@ -21,7 +22,7 @@ export default function SystemStatusWidget() {
   // Check backend health
   const checkBackendHealth = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/health', {
+      const response = await fetch(`${API_BASE_URL}/api/health`, {
         timeout: 3000
       });
       const data = await response.json();
@@ -49,7 +50,7 @@ export default function SystemStatusWidget() {
   // Check Drive sync status (from backend endpoint)
   const checkDriveSyncStatus = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/google-drive/status', {
+      const response = await fetch(`${API_BASE_URL}/api/google-drive/status`, {
         timeout: 3000
       });
       const data = await response.json();

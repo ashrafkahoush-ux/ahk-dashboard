@@ -1,2 +1,51 @@
-<paste the above content>
+# Dependencies
 node_modules
+/.pnp
+.pnp.js
+
+# Build output
+dist
+build
+out
+.next
+.vercel
+.vite
+*.log
+
+# Environment and config
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+.env.test
+*.env
+*.key
+*.pem
+*.crt
+
+# Local credentials and JSON keys
+server/config/google_credentials.json
+server/config/*-service.json
+*.json.timestamp*
+google_credentials.json
+
+# System / OS
+.DS_Store
+Thumbs.db
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+
+# Cache and temp
+.cache
+tmp
+*.temp
+*.bak
+
+# Docs or reports
+*_REPORT.md
+*_CHECKLIST.md
+*_SUMMARY.md
