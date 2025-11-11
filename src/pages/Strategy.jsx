@@ -1,3 +1,4 @@
+// ...existing code...
 import { useState, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Plus, Filter, FileText } from 'lucide-react'
@@ -57,11 +58,13 @@ export default function Strategy() {
       
       return (
         <div key={sourceId} className="mb-8">
-          <div className="flex items-center space-x-3 mb-4 p-4 bg-ahk-navy-500 text-white rounded-lg">
-            <FileText className="w-5 h-5" />
+          <div className="flex items-center space-x-4 mb-5 p-5 bg-gradient-to-r from-ahk-navy-600/60 to-ahk-navy-700/60 backdrop-blur-xl border border-ahk-blue-500/30 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 group">
+            <div className="bg-gradient-to-br from-ahk-blue-500/60 to-ahk-blue-600/60 rounded-lg p-3 border border-ahk-blue-500/50 group-hover:scale-110 transition-transform duration-300">
+              <FileText className="w-6 h-6 text-white" strokeWidth={2.5} />
+            </div>
             <div>
-              <h3 className="font-semibold">{sourceDoc?.title || sourceId}</h3>
-              <p className="text-sm text-white text-opacity-80">{sourceTasks.length} tasks</p>
+              <h3 className="font-display font-bold text-lg text-ahk-blue-300">{sourceDoc?.title || sourceId}</h3>
+              <p className="text-sm text-ahk-slate-300 font-sans">{sourceTasks.length} tasks • Source Document</p>
             </div>
           </div>
           <TaskList tasks={sourceTasks} onTaskUpdate={handleTaskUpdate} showFilters={false} />
@@ -78,13 +81,16 @@ export default function Strategy() {
       
       return (
         <div key={projectId} className="mb-8">
-          <div className="flex items-center space-x-3 mb-4 p-4 bg-ahk-gold-500 text-white rounded-lg">
-            <div className="w-10 h-10 bg-white bg-opacity-20 rounded-full flex items-center justify-center font-bold">
-              {project?.name?.charAt(0) || '?'}
+          <div className="flex items-center space-x-4 mb-5 p-5 bg-gradient-to-r from-ahk-gold-500 to-ahk-gold-400 text-ahk-navy-900 rounded-xl shadow-gold-lg hover:shadow-gold-xl transition-all duration-300 group cursor-pointer">
+            <div className="relative">
+              <div className="absolute inset-0 bg-white/30 rounded-full blur-lg animate-glow-pulse"></div>
+              <div className="relative w-14 h-14 bg-white/30 backdrop-blur-sm rounded-full flex items-center justify-center font-display font-black text-2xl border-2 border-white/50 group-hover:scale-110 transition-transform duration-300">
+                {project?.name?.charAt(0) || '?'}
+              </div>
             </div>
             <div>
-              <h3 className="font-semibold">{project?.name || projectId}</h3>
-              <p className="text-sm text-white text-opacity-80">{projectTasks.length} tasks • {project?.stage || 'Planning'}</p>
+              <h3 className="font-display font-black text-xl">{project?.name || projectId}</h3>
+              <p className="text-sm font-sans opacity-90">{projectTasks.length} tasks • {project?.stage || 'Planning'}</p>
             </div>
           </div>
           <TaskList tasks={projectTasks} onTaskUpdate={handleTaskUpdate} showFilters={false} />
@@ -94,60 +100,82 @@ export default function Strategy() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-ahk-navy-500">
-            Strategy & Roadmap
-          </h1>
-          <p className="text-ahk-slate-500 mt-1">
-            Mission tracker: Your path to 100 strategic milestones
-          </p>
+    <div className="space-y-8 page-transition">
+      {/* Premium Page Header */}
+      <div className="relative">
+        {/* Background Glow */}
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-ahk-gold-500/10 rounded-full blur-3xl"></div>
+        
+        <div className="relative flex items-center justify-between">
+          <div>
+            <h1 className="text-5xl font-display font-black text-gradient-electric mb-2 animate-fade-in-down">
+              Strategy & Roadmap
+            </h1>
+            <p className="text-lg text-ahk-slate-200 font-sans tracking-wide flex items-center gap-2 animate-fade-in-up">
+              <span className="inline-block w-2 h-2 bg-ahk-blue-500 rounded-full animate-glow-pulse"></span>
+              Mission tracker: Your path to 100 strategic milestones
+            </p>
+          </div>
+          <button className="btn-secondary flex items-center space-x-3 px-8 py-4 text-lg shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+            <Plus className="w-5 h-5" />
+            <span className="font-display font-bold">Add Task</span>
+          </button>
         </div>
-        <button className="btn-secondary flex items-center space-x-2">
-          <Plus className="w-5 h-5" />
-          <span>Add Task</span>
-        </button>
       </div>
 
-      {/* Filter Mode Selector */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex items-center space-x-2 mb-3">
-          <Filter className="w-5 h-5 text-ahk-navy-500" />
-          <span className="font-semibold text-ahk-navy-900">View Mode:</span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setFilterMode('all')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterMode === 'all'
-                ? 'bg-ahk-navy-500 text-white'
-                : 'bg-ahk-slate-100 text-ahk-slate-700 hover:bg-ahk-slate-200'
-            }`}
-          >
-            All Tasks
-          </button>
-          <button
-            onClick={() => setFilterMode('by-project')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterMode === 'by-project'
-                ? 'bg-ahk-gold-500 text-white'
-                : 'bg-ahk-slate-100 text-ahk-slate-700 hover:bg-ahk-slate-200'
-            }`}
-          >
-            By Project
-          </button>
-          <button
-            onClick={() => setFilterMode('by-source')}
-            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-              filterMode === 'by-source'
-                ? 'bg-ahk-navy-500 text-white'
-                : 'bg-ahk-slate-100 text-ahk-slate-700 hover:bg-ahk-slate-200'
-            }`}
-          >
-            By Source Document
-          </button>
+      {/* Premium Filter Mode Selector */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-ahk-navy-600/50 to-ahk-navy-700/50 backdrop-blur-xl border border-ahk-gold-500/30 shadow-2xl p-6">
+        {/* Background Glow */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-ahk-blue-500/5 rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center space-x-3 mb-6">
+            <div className="bg-gradient-to-br from-ahk-gold-500/60 to-ahk-gold-600/60 rounded-lg p-2.5 border border-ahk-gold-500/50 shadow-gold-md">
+              <Filter className="w-5 h-5 text-white" strokeWidth={2.5} />
+            </div>
+            <span className="font-display font-bold text-xl text-ahk-gold-300">View Mode:</span>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => setFilterMode('all')}
+              className={`group relative overflow-hidden px-6 py-3.5 rounded-xl font-display font-bold uppercase tracking-wider transition-all duration-300 ${
+                filterMode === 'all'
+                  ? 'bg-gradient-to-r from-ahk-navy-500 to-ahk-navy-600 text-white shadow-lg scale-105'
+                  : 'bg-ahk-navy-600/40 text-ahk-slate-300 hover:bg-ahk-navy-500/50 hover:text-white border border-ahk-gold-500/20 hover:border-ahk-gold-500/40'
+              }`}
+            >
+              {filterMode === 'all' && (
+                <div className="absolute inset-0 bg-gradient-to-br from-ahk-blue-500/20 to-transparent"></div>
+              )}
+              <span className="relative">All Tasks</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('by-project')}
+              className={`group relative overflow-hidden px-6 py-3.5 rounded-xl font-display font-bold uppercase tracking-wider transition-all duration-300 ${
+                filterMode === 'by-project'
+                  ? 'bg-gradient-to-r from-ahk-gold-500 to-ahk-gold-400 text-ahk-navy-900 shadow-gold-lg scale-105'
+                  : 'bg-ahk-navy-600/40 text-ahk-slate-300 hover:bg-ahk-navy-500/50 hover:text-white border border-ahk-gold-500/20 hover:border-ahk-gold-500/40'
+              }`}
+            >
+              {filterMode === 'by-project' && (
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+              )}
+              <span className="relative">By Project</span>
+            </button>
+            <button
+              onClick={() => setFilterMode('by-source')}
+              className={`group relative overflow-hidden px-6 py-3.5 rounded-xl font-display font-bold uppercase tracking-wider transition-all duration-300 ${
+                filterMode === 'by-source'
+                  ? 'bg-gradient-to-r from-ahk-navy-500 to-ahk-navy-600 text-white shadow-lg scale-105'
+                  : 'bg-ahk-navy-600/40 text-ahk-slate-300 hover:bg-ahk-navy-500/50 hover:text-white border border-ahk-gold-500/20 hover:border-ahk-gold-500/40'
+              }`}
+            >
+              {filterMode === 'by-source' && (
+                <div className="absolute inset-0 bg-gradient-to-br from-ahk-blue-500/20 to-transparent"></div>
+              )}
+              <span className="relative">By Source Document</span>
+            </button>
+          </div>
         </div>
       </div>
 

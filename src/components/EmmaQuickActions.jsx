@@ -1,4 +1,3 @@
-import React, { useState } from 'react';
 import { FileText, Mail, AlertTriangle, Archive, Sparkles, X } from 'lucide-react';
 
 /**

@@ -26,30 +26,39 @@ export default function AssetVault() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-ahk-navy-900">
-            Asset Vault
-          </h1>
-          <p className="text-ahk-slate-600 mt-1">
-            Secure storage for all strategic documents and resources
-          </p>
+    <div className="space-y-8 page-transition">
+      {/* Premium Page Header */}
+      <div className="relative">
+        {/* Background Glow */}
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-ahk-gold-500/10 rounded-full blur-3xl"></div>
+        
+        <div className="relative flex items-center justify-between">
+          <div>
+            <h1 className="text-5xl font-display font-black text-gradient-gold mb-2 animate-fade-in-down">
+              Asset Vault
+            </h1>
+            <p className="text-lg text-ahk-slate-200 font-sans tracking-wide flex items-center gap-2 animate-fade-in-up">
+              <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-glow-pulse"></span>
+              Secure storage for all strategic documents and resources
+            </p>
+          </div>
+          <button className="btn-primary flex items-center space-x-3 px-8 py-4 text-lg shadow-gold-lg hover:shadow-gold-xl transition-all duration-300 hover:scale-105">
+            <Download className="w-5 h-5" />
+            <span className="font-display font-bold">Upload New</span>
+          </button>
         </div>
-        <button className="btn-primary flex items-center space-x-2">
-          <Download className="w-5 h-5" />
-          <span>Upload New</span>
-        </button>
       </div>
 
-      {/* Security Notice */}
-      <div className="card bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300">
-        <div className="flex items-start space-x-4">
-          <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+      {/* Premium Security Notice */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600/20 to-blue-700/20 backdrop-blur-xl border-2 border-blue-500/50 shadow-2xl p-6">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent"></div>
+        <div className="relative z-10 flex items-start space-x-5">
+          <div className="bg-gradient-to-br from-blue-500/60 to-blue-600/60 rounded-xl p-3.5 border border-blue-500/50 shadow-lg">
+            <Shield className="w-7 h-7 text-white" strokeWidth={2.5} />
+          </div>
           <div>
-            <h3 className="font-bold text-blue-900 mb-1">Secure Data Room</h3>
-            <p className="text-sm text-blue-800">
+            <h3 className="font-display font-black text-xl text-blue-300 mb-2">Secure Data Room</h3>
+            <p className="text-sm text-blue-200 font-sans leading-relaxed">
               All files are encrypted and access-controlled. Data Room folders are view-only for external parties.
               No internal file names or sensitive information exposed.
             </p>
@@ -165,28 +174,34 @@ export default function AssetVault() {
         })}
       </div>
 
-      {/* Quick Links */}
+      {/* Premium Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="card bg-gradient-to-br from-ahk-navy-700 to-ahk-navy-900 text-white">
-          <h3 className="text-xl font-display font-bold mb-2">Google Drive Data Room</h3>
-          <p className="text-white text-opacity-80 mb-4 text-sm">
-            Access the main data room with organized folders for investor materials
-          </p>
-          <button className="btn-primary bg-white text-ahk-navy-900 hover:bg-ahk-slate-100 flex items-center space-x-2">
-            <ExternalLink className="w-4 h-4" />
-            <span>Open Data Room</span>
-          </button>
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-ahk-navy-700 to-ahk-navy-900 p-8 shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer border border-ahk-navy-600">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-ahk-blue-500/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+          <div className="relative z-10">
+            <h3 className="text-2xl font-display font-black text-white mb-3">Google Drive Data Room</h3>
+            <p className="text-ahk-slate-300 mb-6 text-sm font-sans leading-relaxed">
+              Access the main data room with organized folders for investor materials
+            </p>
+            <button className="bg-white text-ahk-navy-900 hover:bg-ahk-gold-400 hover:text-ahk-navy-900 px-6 py-3 rounded-xl font-display font-bold flex items-center space-x-2 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+              <ExternalLink className="w-5 h-5" />
+              <span>Open Data Room</span>
+            </button>
+          </div>
         </div>
 
-        <div className="card bg-gradient-to-br from-ahk-gold-500 to-ahk-gold-700 text-white">
-          <h3 className="text-xl font-display font-bold mb-2">Generate QR Code</h3>
-          <p className="text-white text-opacity-90 mb-4 text-sm">
-            Create QR codes for pitch deck access and investor resource links
-          </p>
-          <button className="btn-primary bg-white text-ahk-gold-700 hover:bg-ahk-slate-100 flex items-center space-x-2">
-            <Download className="w-4 h-4" />
-            <span>Create QR Code</span>
-          </button>
+        <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-ahk-gold-500 to-ahk-gold-600 p-8 shadow-gold-xl hover:shadow-gold-2xl transition-all duration-500 cursor-pointer">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
+          <div className="relative z-10">
+            <h3 className="text-2xl font-display font-black text-ahk-navy-900 mb-3">Generate QR Code</h3>
+            <p className="text-ahk-navy-800 mb-6 text-sm font-sans leading-relaxed">
+              Create QR codes for pitch deck access and investor resource links
+            </p>
+            <button className="bg-white text-ahk-gold-700 hover:bg-ahk-navy-900 hover:text-white px-6 py-3 rounded-xl font-display font-bold flex items-center space-x-2 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-105">
+              <Download className="w-5 h-5" />
+              <span>Create QR Code</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { Bell, Check, X, TrendingDown, TrendingUp, AlertTriangle, Info, Sparkles } from 'lucide-react';
 import emmaMemory from '../ai/emmaMemory';
 

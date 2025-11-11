@@ -1,0 +1,93 @@
+{
+  "terms": [
+    {
+      "key": "roi",
+      "type": "definition",
+      "value": "Return on Investment, calculated as (gain from investment - cost of investment) / cost of investment. For AHK projects, we target minimum 15% ROI.",
+      "aliases": ["return on investment", "return", "investment return"]
+    },
+    {
+      "key": "irr",
+      "type": "definition",
+      "value": "Internal Rate of Return, the discount rate that makes NPV equal to zero. Used to evaluate project profitability over time.",
+      "aliases": ["internal rate of return"]
+    },
+    {
+      "key": "q-van",
+      "type": "definition",
+      "value": "Q-VAN (Queue-less Autonomous Vehicle Network) is our flagship mobility project featuring autonomous shuttles in Saudi Arabia. Current status: Feasibility study complete, projected IRR of 28%, moving into OEM partnership phase.",
+      "aliases": ["qvan", "queue-less van", "autonomous vehicle network"]
+    },
+    {
+      "key": "wow mena",
+      "type": "definition",
+      "value": "WOW MENA (Wheels on Wire) is our micro-mobility platform project for MENA markets. Focus on e-scooters and e-bikes with smart docking infrastructure. Currently in regulatory approval phase across 3 pilot cities.",
+      "aliases": ["wow", "wheels on wire", "micro-mobility"]
+    },
+    {
+      "key": "ev logistics",
+      "type": "definition",
+      "value": "EV Logistics Study is analyzing the electric vehicle logistics infrastructure opportunity in MENA. Market size identified: $2.4B. Study covers charging networks, fleet management, and last-mile delivery solutions.",
+      "aliases": ["ev study", "electric vehicle logistics"]
+    },
+    {
+      "key": "mena horizon 2030",
+      "type": "definition",
+      "value": "MENA Horizon 2030 is our comprehensive regional market analysis document covering mobility, sustainability, and infrastructure trends through 2030. It serves as our strategic foundation for project selection and investor materials.",
+      "aliases": ["mena 2030", "horizon 2030", "regional analysis"]
+    },
+    {
+      "key": "launch sequence",
+      "type": "definition",
+      "value": "Our standardized project launch process: (1) Market Research & Feasibility, (2) Strategic Partnerships, (3) Pilot Program, (4) Regulatory Approval, (5) Capital Raise, (6) Commercial Launch. Each project follows this sequence with stage-gates.",
+      "aliases": ["launch process", "project launch", "launch phases"]
+    },
+    {
+      "key": "open dashboard",
+      "type": "action",
+      "value": "navigate_dashboard",
+      "description": "Opens the main AHK Dashboard view"
+    },
+    {
+      "key": "show reports",
+      "type": "action",
+      "value": "navigate_reports",
+      "description": "Opens the Reports Archive page"
+    },
+    {
+      "key": "generate report",
+      "type": "action",
+      "value": "trigger_report_generation",
+      "description": "Initiates report generation process"
+    },
+    {
+      "key": "resume last session",
+      "type": "action",
+      "value": "resume_session",
+      "description": "Loads the user's most recent conversation session"
+    },
+    {
+      "key": "save this point",
+      "type": "action",
+      "value": "mark_important",
+      "description": "Marks the current exchange as important for future reference"
+    },
+    {
+      "key": "ashraf",
+      "type": "definition",
+      "value": "Ashraf H. Kahoush (Ash), Founder & CEO of AHKStrategies. Focused on mobility innovation in MENA markets. Background in strategic consulting and infrastructure development.",
+      "aliases": ["ash", "founder", "ceo", "ashraf kahoush"]
+    },
+    {
+      "key": "neom",
+      "type": "definition",
+      "value": "NEOM is Saudi Arabia's flagship smart city mega-project. Major opportunity for AHK's mobility solutions. Target for Q-VAN deployment and strategic partnership discussions in 2026.",
+      "aliases": ["neom city", "the line"]
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "last_updated": "2025-11-07",
+    "description": "AHK Strategies custom dictionary for Emma AI. Contains company-specific terminology, project definitions, and action commands."
+  }
+}

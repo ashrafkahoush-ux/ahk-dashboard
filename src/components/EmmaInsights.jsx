@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import emmaMemory from '../ai/emmaMemory';
 import { Brain, TrendingUp, Clock, Command, BarChart3, Target } from 'lucide-react';
 
@@ -78,84 +78,105 @@ export default function EmmaInsights() {
 
   return (
     <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
-          <Brain className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-white">Emma's Insights</h2>
-          <p className="text-slate-400 text-sm">
-            Learning your patterns for {stats.daysSinceFirstUse} {stats.daysSinceFirstUse === 1 ? 'day' : 'days'}
-          </p>
+      {/* Header - Premium Gold Gradient */}
+      <div className="mb-8 relative">
+        {/* Background glow */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-ahk-gold-500/10 rounded-full blur-3xl -z-10" />
+        
+        <div className="flex items-center gap-4 mb-2">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-ahk-gold-500 to-ahk-gold-400 rounded-full blur-xl opacity-50" />
+            <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-ahk-gold-500 to-ahk-gold-400 shadow-gold-lg">
+              <Brain className="w-8 h-8 text-white" />
+            </div>
+          </div>
+          <div>
+            <h2 className="text-5xl font-black text-gradient-gold">Emma's Insights</h2>
+            <div className="flex items-center gap-2 mt-1">
+              <div className="w-2 h-2 rounded-full bg-ahk-gold-500 animate-pulse" />
+              <p className="text-ahk-slate-200 text-lg">
+                Learning your patterns for {stats.daysSinceFirstUse} {stats.daysSinceFirstUse === 1 ? 'day' : 'days'}
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Stats Grid - Premium Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {insightCards.map((card, index) => {
           const Icon = card.icon;
           return (
             <div
               key={index}
-              className={`
-                relative overflow-hidden rounded-xl p-5
-                bg-gradient-to-br ${card.color}
-                shadow-xl ${card.glow}
-                transform transition-all duration-300
-                hover:scale-105 hover:shadow-2xl
-                border border-white/10
-              `}
+              className="relative overflow-hidden rounded-xl p-6 bg-gradient-to-br from-ahk-navy-600/50 to-ahk-navy-700/50 backdrop-blur-xl border border-ahk-gold-500/20 shadow-xl hover:border-ahk-gold-500/40 hover:shadow-gold-md transform transition-all duration-300 hover:scale-105 group"
             >
               {/* Background glow effect */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl" />
+              <div className="absolute top-0 right-0 w-32 h-32 bg-ahk-gold-500/10 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              
+              {/* Animated gradient overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-ahk-gold-500/5 via-transparent to-ahk-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               
               {/* Content */}
               <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <Icon className="w-6 h-6 text-white/80" />
-                  <div className="px-2 py-1 bg-white/20 rounded-full backdrop-blur-sm">
-                    <span className="text-xs font-medium text-white">Live</span>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 rounded-lg bg-gradient-to-br from-ahk-gold-500/20 to-ahk-gold-400/20 border border-ahk-gold-500/30">
+                    <Icon className="w-6 h-6 text-ahk-gold-400" />
+                  </div>
+                  <div className="px-3 py-1.5 bg-gradient-to-br from-ahk-green-500/30 to-ahk-green-400/30 rounded-full backdrop-blur-sm border border-ahk-green-500/30">
+                    <span className="text-xs font-semibold text-ahk-green-300 flex items-center gap-1">
+                      <div className="w-1.5 h-1.5 rounded-full bg-ahk-green-400 animate-pulse" />
+                      Live
+                    </span>
                   </div>
                 </div>
                 
                 <div className="text-white">
-                  <div className={`font-bold mb-1 ${card.small ? 'text-lg' : 'text-3xl'}`}>
+                  <div className={`font-black mb-2 text-gradient-gold ${card.small ? 'text-2xl' : 'text-4xl'}`}>
                     {card.value}
                   </div>
-                  <div className="text-white/80 text-sm font-medium">
+                  <div className="text-ahk-slate-200 text-sm font-semibold">
                     {card.label}
                   </div>
                 </div>
               </div>
 
-              {/* Shine effect on hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              {/* Bottom accent line */}
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-ahk-gold-500 via-ahk-blue-500 to-ahk-gold-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             </div>
           );
         })}
       </div>
 
-      {/* Learning Progress Bar */}
-      <div className="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-slate-300">Emma's Learning Progress</span>
-          <span className="text-xs text-slate-400">
+      {/* Learning Progress Bar - Premium Glass */}
+      <div className="mt-8 p-6 bg-gradient-to-br from-ahk-navy-600/50 to-ahk-navy-700/50 backdrop-blur-xl border border-ahk-gold-500/20 rounded-xl shadow-xl">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-lg font-bold text-white">Emma's Learning Progress</span>
+          <span className="px-4 py-2 bg-gradient-to-br from-ahk-gold-500/30 to-ahk-gold-400/30 rounded-lg text-ahk-gold-300 font-bold border border-ahk-gold-500/30">
             {Math.min(100, Math.floor((stats.totalCommands / 50) * 100))}% Complete
           </span>
         </div>
-        <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+        <div className="w-full h-3 bg-ahk-navy-700/50 rounded-full overflow-hidden backdrop-blur-sm border border-ahk-gold-500/20">
           <div
-            className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-full transition-all duration-1000 animate-pulse"
+            className="h-full bg-gradient-to-r from-ahk-gold-500 via-ahk-blue-500 to-ahk-gold-500 rounded-full transition-all duration-1000 shadow-gold-md"
             style={{
               width: `${Math.min(100, (stats.totalCommands / 50) * 100)}%`,
+              animation: 'gradientShift 8s ease infinite'
             }}
           />
         </div>
-        <p className="text-xs text-slate-400 mt-2">
-          {stats.totalCommands < 50 
-            ? `${50 - stats.totalCommands} more commands until Emma knows you perfectly!`
-            : 'Emma has mastered your patterns! 🎉'}
+        <p className="text-sm text-ahk-slate-200 mt-3 flex items-center gap-2">
+          {stats.totalCommands < 50 ? (
+            <>
+              <span className="text-ahk-gold-400">⚡</span>
+              <span>{50 - stats.totalCommands} more commands until Emma knows you perfectly!</span>
+            </>
+          ) : (
+            <>
+              <span className="text-ahk-green-400">🎉</span>
+              <span className="text-ahk-green-300 font-semibold">Emma has mastered your patterns!</span>
+            </>
+          )}
         </p>
       </div>
     </div>

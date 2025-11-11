@@ -1,4 +1,3 @@
-import React, { useState, useEffect } from 'react';
 import { Play, Loader2, FileText, Mail, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function CommandPad() {
@@ -93,7 +92,6 @@ export default function CommandPad() {
             deliver: parsed.deliver
           })
         });
-        
         const reportData = await reportRes.json();
         
         if (reportData.success) {

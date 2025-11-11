@@ -1,12 +1,5 @@
 ﻿// server/voice/router.js
-import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-
-// Load environment variables at the very start
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+// Environment variables loaded by server/index.js before this module imports
 
 import express from "express";
 import fetch from "node-fetch";
@@ -17,17 +10,18 @@ import detectIntentFromText from "./intentMap.cjs";
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
-const PICOVOICE_ACCESS_KEY = process.env.PICOVOICE_ACCESS_KEY || "";
-const USE_RHINO = /^true$/i.test(process.env.USE_RHINO || "false");
-
-// Initialize OpenAI client
-const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
+// Initialize OpenAI client lazily to ensure env vars are loaded
+let openai = null;
+const getOpenAI = () => {
+  if (!openai && process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+  return openai;
+};
 
 console.log("🎙️ Voice Router initialized");
-console.log("🔑 OpenAI API Key:", OPENAI_API_KEY ? `${OPENAI_API_KEY.substring(0, 20)}...` : "❌ MISSING");
-console.log("🔑 ElevenLabs API Key:", ELEVENLABS_API_KEY ? "✅ Loaded" : "❌ MISSING");
+console.log("🔑 OpenAI API Key:", process.env.OPENAI_API_KEY ? `${process.env.OPENAI_API_KEY.substring(0, 20)}...` : "❌ MISSING");
+console.log("🔑 ElevenLabs API Key:", process.env.ELEVENLABS_API_KEY ? "✅ Loaded" : "❌ MISSING");
 console.log("✅ Whisper STT endpoint ready");
 console.log("✅ ElevenLabs TTS endpoint ready");
 console.log("✅ Intent detection endpoint ready");
@@ -40,7 +34,7 @@ router.post("/stt", upload.single("file"), async (req, res) => {
     console.log("   - Content-Type:", req.headers['content-type']);
     console.log("   - Language hint:", req.body.language);
     
-    if (!OPENAI_API_KEY) {
+    if (!process.env.OPENAI_API_KEY) {
       console.error("❌ OPENAI_API_KEY missing");
       return res.status(400).json({ error: "OPENAI_API_KEY missing" });
     }
@@ -57,8 +51,8 @@ router.post("/stt", upload.single("file"), async (req, res) => {
     const languageHint = req.body.language || "en";
 
     console.log("🎤 Calling Whisper API...");
-    console.log("   - API Key length:", OPENAI_API_KEY.length);
-    console.log("   - API Key prefix:", OPENAI_API_KEY.substring(0, 10));
+    console.log("   - API Key length:", process.env.OPENAI_API_KEY.length);
+    console.log("   - API Key prefix:", process.env.OPENAI_API_KEY.substring(0, 10));
     console.log("   - Sending buffer directly to Whisper (WebM support)");
     
     // Create a File object from the buffer for OpenAI SDK
@@ -66,7 +60,7 @@ router.post("/stt", upload.single("file"), async (req, res) => {
       type: req.file.mimetype || "audio/webm"
     });
     
-    const response = await openai.audio.transcriptions.create({
+    const response = await getOpenAI().audio.transcriptions.create({
       file: file,
       model: "whisper-1",
       response_format: "text"

@@ -60,7 +60,7 @@ async function findOrCreateFolder(name, parentId = 'root') {
   return createRes.data.id;
 }
 
-// Resolve /MyDrive/AHK Profile/Emma/Outputs path
+// Knowledge base now unified under server/Emma_KnowledgeBase
 async function resolveOutputsFolderId() {
   // Start at My Drive root
   let parentId = 'root';

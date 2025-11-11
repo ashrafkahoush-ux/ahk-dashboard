@@ -24,20 +24,30 @@ export default function MarketingPulse() {
   ]
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-display font-bold text-ahk-navy-900">
-            Marketing Pulse
-          </h1>
-          <p className="text-ahk-slate-600 mt-1">
-            Real-time marketing metrics and campaign performance
-          </p>
-        </div>
-        <div className="flex space-x-2">
-          <button className="btn-secondary">Run Grok Campaign</button>
-          <button className="btn-primary">Export Analytics</button>
+    <div className="space-y-8 page-transition">
+      {/* Premium Page Header */}
+      <div className="relative">
+        {/* Background Glow */}
+        <div className="absolute -top-20 -left-20 w-64 h-64 bg-ahk-green-500/10 rounded-full blur-3xl"></div>
+        
+        <div className="relative flex items-center justify-between">
+          <div>
+            <h1 className="text-5xl font-display font-black text-gradient-gold mb-2 animate-fade-in-down">
+              Marketing Pulse
+            </h1>
+            <p className="text-lg text-ahk-slate-200 font-sans tracking-wide flex items-center gap-2 animate-fade-in-up">
+              <span className="inline-block w-2 h-2 bg-ahk-green-500 rounded-full animate-glow-pulse"></span>
+              Real-time marketing metrics and campaign performance
+            </p>
+          </div>
+          <div className="flex space-x-3">
+            <button className="btn-secondary px-6 py-3 text-base shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105">
+              <span className="font-display font-bold">Run Grok Campaign</span>
+            </button>
+            <button className="btn-primary px-6 py-3 text-base shadow-gold-lg hover:shadow-gold-xl transition-all duration-300 hover:scale-105">
+              <span className="font-display font-bold">Export Analytics</span>
+            </button>
+          </div>
         </div>
       </div>
 

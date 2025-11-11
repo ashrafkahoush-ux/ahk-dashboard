@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Strategy from './pages/Strategy'
@@ -10,16 +10,23 @@ import ReportsArchive from './components/ReportsArchive'
 import EmmaInsights from './components/EmmaInsights'
 import EmmaLearning from './components/EmmaLearning'
 import AICoPilot from './components/AICoPilot'
+import EmmaChat from './components/EmmaChat'
+import EmmaButton from './components/EmmaButton'
 import { ThemeProvider } from './contexts/ThemeContext'
 import { preparePrompt } from './ai/autoAgent.browser'
 import { useProjects, useRoadmap } from './utils/useData'
 import metricsData from './data/metrics.json'
 import sessionContext from './engine/sessionContext'
+import CommandCenter from './pages/CommandCenter';
 
 function AppContent() {
   const navigate = useNavigate()
   const projects = useProjects()
   const roadmap = useRoadmap()
+  
+  // Emma chat state
+  const [isEmmaChatOpen, setIsEmmaChatOpen] = useState(false)
+  const [isEmmaChatMinimized, setIsEmmaChatMinimized] = useState(false)
 
   // Initialize session context on app load
   useEffect(() => {
@@ -39,6 +46,22 @@ function AppContent() {
       sessionContext.save(); // Save on unmount too
     };
   }, []);
+
+  // Keyboard shortcut for Emma (Ctrl+E or Cmd+E)
+  useEffect(() => {
+    const handleKeyPress = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        setIsEmmaChatOpen(prev => !prev);
+        if (isEmmaChatMinimized) {
+          setIsEmmaChatMinimized(false);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isEmmaChatMinimized]);
 
   const handleAIAnalysis = () => {
     try {
@@ -81,10 +104,28 @@ function AppContent() {
         <Route path="/reports" element={<ReportsArchive />} />
         <Route path="/emma-insights" element={<EmmaInsights />} />
         <Route path="/emma-learning" element={<EmmaLearning />} />
+        <Route path="/command-center" element={<CommandCenter />} />
       </Routes>
 
       {/* Global AI Co-Pilot - Available on all pages (includes Emma Voice Console) */}
       <AICoPilot />
+      
+      {/* Emma Chat Interface */}
+      <EmmaChat 
+        isOpen={isEmmaChatOpen}
+        onClose={() => setIsEmmaChatOpen(false)}
+        onMinimize={() => setIsEmmaChatMinimized(!isEmmaChatMinimized)}
+        isMinimized={isEmmaChatMinimized}
+      />
+      
+      {/* Emma Floating Button */}
+      <EmmaButton 
+        onClick={() => {
+          setIsEmmaChatOpen(true);
+          setIsEmmaChatMinimized(false);
+        }}
+        isOpen={isEmmaChatOpen}
+      />
     </Layout>
   )
 }

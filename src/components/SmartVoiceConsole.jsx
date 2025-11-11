@@ -1,5 +1,4 @@
-﻿// src/components/SmartVoiceConsole.jsx
-import React, { useRef, useState } from "react";
+// src/components/SmartVoiceConsole.jsx
 import { sttTranscribe, ttsSpeak, detectIntent } from "../ai/voiceEngine";
 import { runMultiAIAnalysis } from "../ai/orchestrator";
 import { speak as browserSpeak, stopSpeak } from "../ai/speech"; // keep as fallback for dev test

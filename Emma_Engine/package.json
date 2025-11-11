@@ -1,0 +1,27 @@
+{
+  "name": "emma-engine",
+  "version": "1.0.0",
+  "description": "Emma Intelligence Engine - Orchestration & AI Core for AHK Strategies Dashboard",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "dev": "node index.js",
+    "start": "node index.js",
+    "test": "echo \"Emma Engine health check\" && curl http://localhost:7070/health"
+  },
+  "keywords": ["emma", "ai", "orchestration", "voice", "automation"],
+  "author": "AHK Strategies",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.13.2",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "googleapis": "^118.0.0",
+    "node-cron": "^4.2.1",
+    "node-fetch": "^3.3.2",
+    "uuid": "^13.0.0"
+  }
+}

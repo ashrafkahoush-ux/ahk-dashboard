@@ -1,0 +1,39 @@
+{
+  "source": "Google Drive: /AHK Profile/Emma/KnowledgeBase/Research/MENA_Horizon_2030/mena_horizon_2030.docx",
+  "synced_at": "2025-11-06T20:17:56.270Z",
+  "segments": [
+    {
+      "index": 1,
+      "filename": "segment_01.md",
+      "size": 6778,
+      "tokens": 1695
+    },
+    {
+      "index": 2,
+      "filename": "segment_02.md",
+      "size": 7196,
+      "tokens": 1799
+    },
+    {
+      "index": 3,
+      "filename": "segment_03.md",
+      "size": 6463,
+      "tokens": 1616
+    },
+    {
+      "index": 4,
+      "filename": "segment_04.md",
+      "size": 7170,
+      "tokens": 1793
+    },
+    {
+      "index": 5,
+      "filename": "segment_05.md",
+      "size": 4865,
+      "tokens": 1217
+    }
+  ],
+  "total_segments": 5,
+  "total_size": 32472,
+  "total_tokens": 8120
+}

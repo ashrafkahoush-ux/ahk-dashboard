@@ -1,4 +1,3 @@
-import React, { useEffect, useState } from 'react';
 
 /**
  * Emma's Avatar Component - Visual personality system

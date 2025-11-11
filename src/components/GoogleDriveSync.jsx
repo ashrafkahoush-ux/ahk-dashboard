@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Cloud, CloudOff, RefreshCw, FolderOpen, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+
+const BACKEND_URL = "http://localhost:4000";
 
 export default function GoogleDriveSync() {
   const [driveStatus, setDriveStatus] = useState({
@@ -25,17 +27,34 @@ export default function GoogleDriveSync() {
 
   const checkDriveStatus = async () => {
     try {
-      // This would call the backend API
-      const response = await fetch('/api/google-drive/status');
-      const data = await response.json();
+      console.log('[GoogleDriveSync] Fetching status from:', `${BACKEND_URL}/api/google-drive/status`);
+      const response = await fetch(`${BACKEND_URL}/api/google-drive/status`);
+      
+      console.log('[GoogleDriveSync] Response status:', response.status);
+      console.log('[GoogleDriveSync] Response headers:', response.headers);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      console.log('[GoogleDriveSync] Raw response:', text.substring(0, 200));
+      
+      const data = JSON.parse(text);
+      console.log('[GoogleDriveSync] Parsed data:', data);
       
       setDriveStatus({
-        personal: { connected: data.personal?.connected || false, syncing: false },
-        work: { connected: data.work?.connected || false, syncing: false }
+        personal: { connected: data.ok || false, syncing: false },
+        work: { connected: false, syncing: false }
       });
+      
+      if (data.ok) {
+        setError(null);
+      }
     } catch (err) {
-      console.error('Failed to check drive status:', err);
-      setError('Could not connect to Google Drive');
+      console.error('[GoogleDriveSync] Failed to check drive status:', err);
+      console.error('[GoogleDriveSync] Error stack:', err.stack);
+      setError(`Sync Error: ${err.message}`);
     }
   };
 
@@ -44,21 +63,37 @@ export default function GoogleDriveSync() {
     setError(null);
     
     try {
-      const response = await fetch('/api/google-drive/sync', {
+      console.log('[GoogleDriveSync] Starting sync to:', `${BACKEND_URL}/api/google-drive/sync`);
+      const response = await fetch(`${BACKEND_URL}/api/google-drive/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
       
-      const data = await response.json();
+      console.log('[GoogleDriveSync] Sync response status:', response.status);
       
-      if (data.success) {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const text = await response.text();
+      console.log('[GoogleDriveSync] Raw sync response:', text.substring(0, 200));
+      
+      const data = JSON.parse(text);
+      console.log('[GoogleDriveSync] Parsed sync data:', data);
+      
+      if (data.ok || data.success) {
         setLastSync(new Date());
+        setError(null);
         console.log('✅ Emma knowledge synced:', data);
+        
+        // Refresh status after successful sync
+        await checkDriveStatus();
       } else {
         throw new Error(data.error || 'Sync failed');
       }
     } catch (err) {
-      console.error('Sync error:', err);
+      console.error('[GoogleDriveSync] Sync error:', err);
+      console.error('[GoogleDriveSync] Error stack:', err.stack);
       setError(err.message);
     } finally {
       setSyncInProgress(false);

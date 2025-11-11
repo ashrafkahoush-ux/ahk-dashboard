@@ -1,3 +1,4 @@
+// ...existing code...
 import { useState } from 'react'
 import { Building2, Globe, ChevronDown, ChevronRight, ExternalLink, Eye, EyeOff } from 'lucide-react'
 import { useClients } from '../utils/useData'

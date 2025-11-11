@@ -63,7 +63,7 @@ export const OAUTH_CONFIG = {
     'https://www.googleapis.com/auth/drive.file',
     'https://www.googleapis.com/auth/drive.metadata.readonly'
   ],
-  redirectUri: 'http://localhost:3000/auth/google/callback'
+  redirect_uri: 'http://localhost:4000/oauth2callback'
 };
 
 /**

@@ -1,0 +1,39 @@
+VERIFIED DIRECTORY STRUCTURE
+=============================
+
+Folder PATH listing for volume OS
+Volume serial number is AE6F-FC16
+C:\USERS\ASHRA\ONEDRIVE\DESKTOP\AHK_DASHBOARD_V1\SERVER\EMMA_KNOWLEDGEBASE
++---Reports
+|   \---Generated
+|           2025-11-06_ahk_strategic_performance_report.md
+|           
+\---sources
+    \---mena_horizon_2030
+            manifest.json
+            segment_01.md
+            segment_02.md
+            segment_03.md
+            segment_04.md
+            segment_05.md
+            
+
+
+FRONTEND STRUCTURE (src/)
+=========================
+  _archive/   ai/   api/   components/   config/   contexts/   data/   emma_language/   engine/   hooks/   integrations/   lib/   pages/   scripts/   styles/   utils/   voice/
+
+KEY DIRECTORIES VERIFIED
+========================
+✅ server/Emma_KnowledgeBase/Reports/Generated/ - AI reports output
+✅ server/Emma_KnowledgeBase/sources/ - Drive-synced knowledge
+✅ uploads/ - Temporary audio files
+✅ public/ - Static assets only (no dynamic data)
+✅ src/ - Frontend React application
+✅ .archive/ - Old structures archived
+
+OLD DIRECTORIES REMOVED
+========================
+❌ Emma_KnowledgeBase/ (root level) → archived
+❌ public/reports/sources/ → deleted
+
