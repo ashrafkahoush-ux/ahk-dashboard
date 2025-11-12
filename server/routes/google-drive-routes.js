@@ -7,14 +7,21 @@ const router = express.Router();
 // Simple test route to check auth and connectivity
 router.get("/status", async (req, res) => {
   try {
-    // Test Drive access by listing files
-    const result = await drive.files.list({ pageSize: 1, fields: 'user' });
+    // Test Drive access by getting user info
+    const result = await drive.about.get({ fields: 'user' });
     res.json({ 
-      ok: true, 
-      message: "Google Drive Connected"
+      status: "Google Drive connected",
+      ok: true,
+      user: result.data.user.emailAddress,
+      displayName: result.data.user.displayName
     });
   } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
+    console.error('Google Drive status error:', err);
+    res.status(500).json({ 
+      ok: false, 
+      status: "error",
+      error: err.message 
+    });
   }
 });
 
