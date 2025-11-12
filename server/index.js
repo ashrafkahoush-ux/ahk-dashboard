@@ -54,7 +54,20 @@ import fusionRouter from "./routes/fusion.js";
 import { initializeFusionEmitter, getFusionEmitterHealth } from "./services/fusionEmitter.js";
 
 const app = express();
-app.use(cors());
+
+// CORS configuration for production
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'https://ahk-dashboard.vercel.app',
+    'https://ahk-dashboard-backend.onrender.com'
+  ],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json({ limit: "15mb" }));
 
 // Mount dashboardData router at /api
